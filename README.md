@@ -1,5 +1,12 @@
 # 5940-Project
 
+## Team Members 
+Liaba Gondal - lg695
+Tifany Martinez - Tm783
+Mikey He - ch2373
+Chen Chen - cc3254
+Eesha Kamran - ek843
+
 ## AI-DLC setup
 
 This repository includes **AI-DLC v1.0.1** rules for **OpenAI Codex**, installed using the official [v1.0.1 Codex setup instructions](https://github.com/awslabs/aidlc-workflows/blob/v1.0.1/README.md#openai-codex).
