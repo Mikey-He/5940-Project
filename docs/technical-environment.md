@@ -1,91 +1,123 @@
-# ApplyTrack AI technical environment
+# ApplyTrack AI · Technical environment
 
-**Draft for team review · INFO 5940 · AI-DLC v1.0.1**
+**INFO 5940 | AI-DLC v1.0.1 | Draft for team review**
 
-ApplyTrack helps a student answer “What happened with this application, and what do I need to do next?” A local dashboard shows one expandable timeline per application. An interview invitation, a proposed time, a confirmation, and a reschedule each carry different implications for the student. The system keeps the email evidence behind each change and lets the student correct the record.
+ApplyTrack helps a student track applications to several roles, including roles at the same employer. A student can save a posting while applying or discover an application later from a confirmation email. Both paths feed the same local record. Each application shows what happened, what action is due, and the evidence for its current status.
 
-## Runtime and deployment
+The interaction experiment established the behavior to carry into Inception: capture a posting, confirm submission, inspect the source of an update, and link an event to one or more applications. Final visual design and usability evaluation remain open. The Chrome capture flow still requires an end-to-end test from the actual toolbar on the team's demo machine.
 
-| Component | Proposed choice | How we will use it |
+## 1. Runtime, dependencies, and deployment
+
+| Component | Proposed environment | Responsibility |
 | --- | --- | --- |
-| Language and environment | Python 3.12, `venv`, `pip` | One virtual environment per checkout. During Construction, commit pinned dependencies for reproducible installs. |
-| Local web app | FastAPI, Uvicorn, Jinja2 | Serve a dashboard, application timelines, and a review form from one Python process on the student's laptop. |
-| Persistence | SQLite via Python's `sqlite3` | Store applications, events, message IDs, JD snapshots, and correction history across restarts. |
-| Email access | Gmail API, Google OAuth, `gmail.readonly` | Read candidate messages from an authorized test account within the scan scope the user confirms. |
-| Planned product LLM | OpenAI API, `gpt-5.4-mini`, hosted by OpenAI | Extract event type, employer, role, requisition ID, date, time zone, and supporting text into a Pydantic-validated schema. Missing values stay null. |
-| Test framework | pytest, FastAPI TestClient, temporary SQLite databases | Run automated tests locally with synthetic emails and simulated Gmail, model, and job-page responses. |
+| Application | Python 3.12, FastAPI, Pydantic, Jinja2, browser JavaScript | Serve application histories and review controls. Validate requests and model output before applying changes. |
+| Package management | Python `venv` and `pip` | Commit pinned dependencies for the demo during Construction and use the same environment for pytest. |
+| Browser capture | Chrome Manifest V3 extension, plain JavaScript, `activeTab` and `scripting` | Open the local app or, on a user click, extract the current posting's URL, title and readable JD text for review. |
+| Local database | SQLite via Python's `sqlite3` | Keep applications, events, event-to-application links, JD snapshots, source references, scan checkpoints and correction history together. |
+| Gmail | Google OAuth and the Gmail API with `gmail.readonly` | Read messages in the authorized user's selected scan range. The backend owns synchronization. |
+| Product model | OpenAI API, planned model `gpt-5.4-mini` | Classify relevant messages and extract structured fields. Select the final model by measured accuracy on our labeled messages, API access and cost. |
+| Tests | pytest, FastAPI TestClient, temporary SQLite databases | Exercise extraction validation, linking, state changes, transaction retries and API behavior with isolated fixtures. |
 
-The proposed demo runs on one laptop with one authorized account. During Construction, the planned entry point is `uvicorn applytrack.main:app --host 127.0.0.1`. The browser and database run locally. Gmail, the hosted LLM, and direct job-posting pages require internet access. Codex is the team's coding agent. The product calls the model through the backend using its own API credentials.
+**Deployment model.** The course demo runs on one laptop with one authorized test mailbox. The planned backend command is `uvicorn applytrack.main:app --host 127.0.0.1 --port 8765`. The user opens the dashboard in a browser. The extension sends user-confirmed captures to this same backend, so a later Gmail update finds the same records. Application data stays in local SQLite. Gmail access, direct posting retrieval and model inference use network services. OpenAI hosts inference. The team operates the web app locally. Codex is the development agent.
 
-## How an email becomes a timeline event
+## 2. Capture and reconciliation
 
-1. **Scan.** After first-time authorization and scope selection, start an initial scan automatically. While the app runs, check periodically and offer “Scan now.” On reopening, resume from the last successful scan. Save progress after processing succeeds so an interrupted scan can retry.
-2. **Extract and validate.** Send the relevant text of candidate emails to the model. Distinguish invitations, proposed times, confirmations, reschedules, cancellations, and reminders. Preserve the source time-zone text. If the sent date is the only date available, label it as the email date. Leave the application submission date unknown.
-3. **Match.** Use a requisition ID or corroborating role and thread evidence to associate an update with a single application. Distinct roles at one employer get distinct timelines. An ambiguous match or a conflict with a user correction goes to review, where the user can select a record, create one, or edit fields.
-4. **Record.** Commit the event, source reference, and processed-message marker in one database transaction. Use a unique key on account and Gmail message ID so a retry cannot apply a message twice. A separate reminder email can be linked to an existing interview. A reschedule updates that interview's displayed time while preserving its previous time and evidence. An application awaiting a reply stays pending.
-5. **Display and correct.** Expand an application to see dated events and their sources. Show the currently scheduled interview separately from its history. Users can add missing applications and events, correct a field, or undo an automated change. Record each correction with its origin and time.
-
-## Job descriptions
-
-When the email contains a direct link to the original posting, fetch the public page and save its readable JD text, source URL, and retrieval time together. This preserves the version actually retrieved. If the posting is missing, expired, inaccessible, or cannot be identified on the page, offer a paste field. Label a pasted snapshot as user-provided. Keep a saved snapshot accessible after the link expires. The MVP uses only the supplied posting or pasted text for the JD. Interview schedules appear in the app.
-
-## Security and data handling
-
-- Use an authorized test mailbox containing synthetic recruiting messages for the course demo. Before scanning, show the mailbox scope and explain which email text is sent to the hosted provider. Strip signatures and irrelevant quoted history where possible while preserving evidence needed for a scheduling update.
-- Keep OAuth tokens, API keys, local databases, and email contents outside Git. Store tokens in the OS credential store and read the model key from the local environment. Log message-processing outcomes without logging bodies, credentials, or token-bearing URLs. Provide account disconnect and local data deletion.
-- Treat email and job-page content as input data. Validate model output against allowed fields and event types. Only application code can update SQLite. Escape text rendered in the dashboard.
-- Fetch public HTTPS job pages with bounded response size and timeout. Restrict destinations to public addresses, recheck any redirect, and send no Gmail credentials, cookies, or authorization headers. On failure, preserve the application and offer manual JD entry.
-
-## Prohibited libraries and alternatives for this MVP
-
-| Prohibited use | Reason | Alternative |
+| Entry point | Evidence available | Expected behavior |
 | --- | --- | --- |
-| Selenium or Playwright for retrieving JDs behind login | Browser automation would require managing third-party sessions and complicate the local demo. | Use HTTPX for public posting URLs, parse readable text with Beautiful Soup, and accept a pasted JD. |
-| `pickle` for reading imported or model-produced records | Deserializing untrusted pickle data can execute code. | Validate JSON with Pydantic and persist the accepted fields in SQLite. |
+| Student clicks the extension on a posting | Current page, original URL, selected or extracted JD, employer, title and requisition ID when present | Preview editable fields. Saving creates a **Started** application. An explicit “I applied” action records submission. Reopening a reliably identified posting offers its existing record. |
+| Gmail finds a submission receipt | Source message ID, employer and any stated role, requisition ID, date or direct posting URL | Link a uniquely matched receipt to an existing capture and mark it **Applied**. Create a record for a clearly identified new application. Queue uncertain matches for review. |
+| Email includes the original posting link | Public posting URL and readable page text | Retrieve the page and store the JD text, source URL and retrieval time as a snapshot. If retrieval fails or the email lacks the link, the user can paste the original JD. Keep the snapshot when the page expires. |
 
-## Representative endpoint, function, and test
+Use an employer plus a requisition ID or a corroborated original posting URL to identify an application. A title and a thread can provide supporting evidence. Reused threads, conflicting IDs, or multiple plausible matches require review. Preserve the actual submission date when supplied. Otherwise show when the receipt was received and leave submission time unknown. Preserve existing JD versions and user corrections when new evidence arrives.
 
-These examples specify intended behavior for Construction. The review endpoint receives only the event ID and the application selected by the user. The backend resolves both against the current account before saving the decision.
+**Scan lifecycle.** After Google authorization and confirmation of scan scope, run the initial scan automatically. Check periodically while the local app is running, offer a manual refresh, and catch up on reopening. Commit new events, links, and processed-message markers in a transaction. Advance the scan checkpoint only after all messages through that point have succeeded or been durably queued for review. A retry after a crash must give the same result. Use a unique key on mailbox and Gmail message ID for ingestion, and a separate event identity for an assessment or interview that several emails discuss.
+
+## 3. Events, evidence, and user corrections
+
+The LLM returns an event type, employer, role or requisition references, explicit scheduling details, and supporting text. Missing fields stay null. Python validates these fields and compares the evidence with stored applications. A model score alone cannot authorize a change.
+
+| Situation | Decision and visible result |
+| --- | --- |
+| A single-role online assessment (OA) names a unique requisition | Attach the OA to that application. Retain the email reference and deadline if supplied. |
+| One email explicitly says the **same OA** covers two identified roles | Store one assessment and two application links. Both histories refer to the same assessment and completion state. |
+| One employer sends an OA without identifying a role, or lists two roles without explaining whether their OAs are shared | Keep the source in review. A student can drag it onto a candidate, inspect the source, select one or several roles and confirm. A click or keyboard selection performs the same action. Repositioning a node only changes its layout. Separate OAs retain separate event identities. |
+| An employer invites the student to schedule or proposes a time | Show the invitation or proposal and the next action. Preserve any existing confirmed time until an explicit confirmation or reschedule arrives. |
+| A confirmed meeting changes, is cancelled, or receives a reminder | Update the identified meeting, retain earlier times and sources, and count the interview once. Flag ambiguous times, time zones or rounds for review. |
+| A user corrects or unlinks an event | Record the change and its previous links. A conflicting later scan requests review. Corrections and undo preserve an attributable history. |
+
+An event-to-application link is unique on `(event_id, application_id)`. Store message provenance separately so a reminder can add evidence to an existing event. Keep unlinked events available for review. A lack of further email leaves an application awaiting response. The MVP presents interview dates inside ApplyTrack. Calendar writes, searching the web for a guessed JD, and automated job recommendations are outside this scope.
+
+## 4. Security and data handling
+
+- **Consent and least privilege.** Google presents the read-only Gmail grant. ApplyTrack separately explains the selected scan range and which message excerpts go to the hosted model. Use an authorized test account and synthetic recruiting messages for the course demo. Disconnect revokes access and stops scanning. Provide a separate local-data deletion action.
+- **Extension and backend boundary.** Read the active posting only after the user clicks capture. Send the reviewed posting to the loopback backend using an explicitly paired extension and narrowly scoped local permission. Authenticate changes, validate the browser origin and protect dashboard forms against cross-site requests. Keep Gmail tokens and model credentials in the backend.
+- **Minimize stored data.** Keep the message ID, necessary supporting text and extracted fields. Trim unrelated quoted conversations and signatures before model calls. Store OAuth tokens in the OS credential store and supply the API key through the local environment. Exclude credentials, real messages, JD captures and the local database from Git. Log processing outcomes without message bodies or credential-bearing links.
+- **Treat external content as data.** Validate model responses against an allowed schema, escape displayed text and use parameterized SQL. For email-provided posting links, retrieve only public HTTPS destinations, validate each redirect, bound time and response size, and send no mailbox credentials or browser cookies.
+
+## 5. Prohibited libraries and alternatives
+
+These restrictions apply to the indicated uses in the course MVP.
+
+| Library and prohibited use | Reason | Alternative |
+| --- | --- | --- |
+| Selenium or Playwright for signing in to job portals and retrieving private JDs | This would require handling a student's third-party session and adds a brittle dependency on portal login flows. | Capture the user-visible posting on click. For a public original URL use HTTPX and Beautiful Soup. Accept pasted JD text when unavailable. |
+| Python `pickle` for importing mailbox, model or application records | Untrusted pickle data can execute code during deserialization. | Validate JSON with Pydantic and persist typed fields to SQLite. |
+
+## 6. Representative endpoint, function, and test
+
+**Endpoint.** A student inspects an ambiguous OA and confirms it belongs to two applications. The dashboard submits the complete selected set in one request. An empty set means “return to review.”
 
 ```http
-POST /api/review-events/evt-42/resolve
+PUT /api/events/oa-7/applications
 Content-Type: application/json
 
-{"application_id": "app-17"}
+{"application_ids": ["app-17", "app-23"], "expected_revision": 3}
 ```
 
-On success, return `200` with the resolved event and application IDs. Repeating the same decision returns the existing result. A conflicting second decision returns `409` so the user can review the newer state.
+The backend verifies the event and every selected application belong to the active account. In one transaction it replaces the link set, records the previous selection and updates the revision. Return `200` with the saved IDs and revision. A retry of the same selection returns the existing result without a second history entry. A stale revision with a different selection returns `409` and the current state for review. A failed ownership check changes nothing.
 
-The function below represents a decision after an interview has been identified and the extracted time has been normalized. Its return value helps the caller decide whether to change the displayed time. The caller retains the source message in either case.
+**Function.** This example handles OA emails *after* validation has resolved every role reference uniquely within the same employer and account. The caller sets `all_refs_resolved=False` for missing, conflicting or ambiguous references. The shared flag requires source wording that one assessment covers all named roles.
 
 ```python
-from datetime import datetime
-
-
-def schedule_action(kind: str, new_time: datetime | None,
-                    current_time: datetime | None) -> str:
-    if kind not in {"confirmed", "rescheduled"}:
-        return "keep_current_time"
-    if new_time is None or new_time.utcoffset() is None:
-        return "request_review"
-    if new_time == current_time:
-        return "keep_current_time"
-    return "update_current_time"
+def oa_link_targets(
+    resolved_ids: tuple[str, ...], *, all_refs_resolved: bool, explicitly_shared: bool
+) -> frozenset[str] | None:
+    """Return links for one assessment, or None to request user review."""
+    targets = frozenset(resolved_ids)
+    if not all_refs_resolved or not targets:
+        return None
+    if len(targets) == 1 or explicitly_shared:
+        return targets
+    return None
 ```
+
+**pytest example.** Two applications at the same company make the scope of the email consequential. Exercise that decision before any database write.
 
 ```python
-from datetime import datetime
+import pytest
 
 
-def test_proposed_time_does_not_replace_confirmed_interview():
-    tuesday = datetime.fromisoformat("2026-11-24T14:00:00-05:00")
-    wednesday = datetime.fromisoformat("2026-11-25T14:00:00-05:00")
-    assert schedule_action("proposed", wednesday, tuesday) == "keep_current_time"
-    assert schedule_action("rescheduled", wednesday, tuesday) == "update_current_time"
+@pytest.mark.parametrize(("refs", "resolved", "shared", "expected"), [
+    (("app-17",), True, False, {"app-17"}),
+    (("app-17", "app-23"), True, True, {"app-17", "app-23"}),
+    (("app-17", "app-23"), True, False, None),
+    (("app-17",), False, True, None),
+    ((), False, False, None),
+])
+def test_oa_links_require_evidence(refs, resolved, shared, expected):
+    assert oa_link_targets(
+        refs, all_refs_resolved=resolved, explicitly_shared=shared
+    ) == expected
 ```
 
-During Construction, replay a labeled mailbox with two roles at one employer. Confirm a Tuesday interview for one role, reschedule it to Wednesday, send a reminder, then scan again. Expect one interview showing Wednesday, both schedule changes in its history, and no change to the other role. Also test expired posting links, missing time zones, and a user correction followed by a conflicting email. Evaluate the model separately on labeled messages and record event classification errors, incorrect extracted fields, and ambiguous matches incorrectly applied automatically.
+## 7. Verification during Construction
 
-## Decisions for the shared review
+| Check | Evidence of success |
+| --- | --- |
+| Extension capture followed by Gmail confirmation | On the demo machine, capture a posting, inspect its JD and mark it started. Scan a matching receipt twice. Expect one application, one receipt event, the original JD snapshot and a single transition to Applied. Also test a receipt for an application that was never captured. |
+| One shared OA versus two separate OAs | Replay synthetic messages for the same employer. A shared OA has one event ID and two links. Separate identified OAs have distinct IDs. A role-less OA stays in review. Confirming links twice leaves one correction entry. |
+| Interview history | Replay invitation, proposed time, confirmation, reschedule, reminder and cancellation. Check the action due, the current appointment and the ordered history after each message. Repeat the scan and verify counts are unchanged. |
+| Recovery and access boundaries | Simulate model timeout, interrupted scan, expired JD link, conflicting user correction and a request for another account's record. Verify recoverable work resumes, failed retrieval offers paste, and unrelated records stay intact. |
+| Model selection | Label synthetic messages with expected event types, role scope and time fields. Compare classification errors, incorrect automatic links, missing-field handling and API cost on the same messages. Record the model ID and observed results for team review. |
 
-The proposed stack and model are working choices for the README and vision authors to review. Compare model cost and extraction accuracy on the same labeled emails before settling the Construction configuration. Align the vision's scan behavior with the proposed automatic initial scan, periodic checks while open, and catch-up on reopen. During requirements analysis, decide the initial scan window, polling interval, and what evidence is sufficient to apply an update automatically.
+The shared Inception session should reconcile these input decisions with the vision, especially Chrome capture and automatic scans. The team still needs to choose the first-scan window, polling interval, and final interaction design. The rules above give the team observable outcomes to use when reviewing user stories and acceptance criteria.
