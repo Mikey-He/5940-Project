@@ -19,7 +19,8 @@ C) Two demonstrations on two different forms with the same kind of control
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: one demonstration keeps teaching cheap (success criterion 2 has applicant A teach each fix once), and requiring one clean read-back first stops an untested fix from reaching other students.
 
 ## Question 2
 When a shared (approved) rule fails a read-back, who should stop using it?
@@ -32,7 +33,8 @@ C) Everyone, automatically, after a set number of reported failures (this needs 
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: there is no backend to count failures, so the rule is disabled on the failing laptop (success criterion 4), and a prefilled issue gives the team what it needs to withdraw the rule through a pull request.
 
 ## Question 3
 Which hard controls must the three fixture forms include?
@@ -45,7 +47,8 @@ C) The proposed set plus a file upload field, a sponsorship radio group, a custo
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: C
+Rationale: the fixtures must exercise every MVP feature and reach at least 60 field decisions across three applicants, so they also need a file upload, a sensitive question, a custom dropdown and a word-limited open question.
 
 ## Question 4
 Who reviews contributed rules during the demo period, and how fast?
@@ -58,7 +61,8 @@ C) Two approvals from teammates other than the author
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: matches the README rule that every change is reviewed by another teammate, and a 48-hour window fits the time left before December 16.
 
 ## Question 5
 Should saved open-question answers expire?
@@ -71,7 +75,8 @@ C) Answers older than one season are hidden until the student renews them
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: old answers stay useful, but a visible "old, please review" mark keeps stale details (dates, past roles) from being typed without a second look.
 
 ## Question 6
 How should the plugin keep the résumé and cover letter?
@@ -82,7 +87,8 @@ B) Keep a private copy in the plugin data folder
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: storing only the path, size and hash keeps one source of truth on the laptop and avoids a second copy of personal files.
 
 ---
 
@@ -99,7 +105,8 @@ C) The plugin clicks "Next" automatically when every field on the page was fille
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: the student stays in control of every page, while the plugin saves clicks. The plugin never clicks a button whose label or type submits the application.
 
 ## Question 8
 For a field that code could not match (an `ask_claude` field), what may Claude do?
@@ -112,7 +119,8 @@ C) Fill it only for text fields. Leave selects, comboboxes, radios and checkboxe
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: keeps forms fast while honoring "flagged, never guessed": Claude fills only a clear one-to-one mapping to a confirmed fact, and every Claude decision is marked in the review list.
 
 ## Question 9
 How should the student confirm profile records extracted from the résumé?
@@ -125,7 +133,8 @@ C) Grouped by section (contact, education, experience), confirming each section
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: C
+Rationale: section-level review is fast enough for Maya's "minutes per form" goal, and each record inside a confirmed section is stored as confirmed, so unconfirmed sections are never filled.
 
 ## Question 10
 How many profiles and résumé versions does one install support?
@@ -138,7 +147,8 @@ C) Several complete profiles
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: several résumé versions or profiles add matching and selection logic that the MVP and the three fixture forms do not need.
 
 ## Question 11
 Which sensitive question categories must have fixed answers, and what happens when no answer is set?
@@ -151,7 +161,8 @@ C) Sponsorship and work authorization only. Demographic questions are always lef
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: choosing "I prefer not to answer" on the student's behalf would still be the plugin deciding a sensitive answer, which vision.md forbids. Unset means blank and flagged.
 
 ## Question 12
 What does undo cover?
@@ -162,7 +173,8 @@ B) Every page of the current run that is still reachable in the browser
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: matches vision.md and the success criteria. Earlier pages may already be saved by the site, so restoring them cannot be guaranteed.
 
 ## Question 13
 Which document formats are accepted?
@@ -175,7 +187,8 @@ C) PDF for extraction. PDF or DOCX for upload
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: C
+Rationale: vision.md defines setup from a résumé PDF, while employers often ask for DOCX uploads, which `register_document` already accepts.
 
 ## Question 14
 Should the student be able to delete their data from inside the plugin?
@@ -188,7 +201,8 @@ C) No. Uninstalling the plugin without keeping data is enough for the MVP
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: profiles hold personal data, so one confirmed delete-all command is a small feature that gives the student full control.
 
 ---
 
@@ -205,7 +219,8 @@ C) No hard target. We record the timing and report it
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: a whole-form target is measurable in the demo and reflects Maya's goal. Timings are logged for every run.
 
 ## Question 16
 Which operating systems must the plugin run on for the team and the demo?
@@ -218,7 +233,8 @@ C) macOS only for the demo, with best effort elsewhere
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: the team develops on Windows and macOS laptops, and Node 22 with `node:sqlite` and Chrome run on both. Linux is not needed for the demo.
 
 ## Question 17
 What unit test coverage should the MCP server meet?
@@ -231,7 +247,8 @@ C) At least 70% line coverage on `server/src`, enforced in CI
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: C
+Rationale: 70% line coverage on `server/src`, enforced in CI, plus unit tests for every deterministic decision listed in tech-env.md, is a firm bar the team can meet by December 16.
 
 ## Question 18
 How should the personal-data scan treat a value that might be personal but is not in any synthetic profile, such as a city name or a company name in a step?
@@ -242,7 +259,8 @@ B) Reject values matching email, phone, street address, date of birth and ID-num
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: the strictest scan is also the simplest to prove: a shared rule may hold only profile references and option labels read from the page, so no personal literal can slip through.
 
 ## Question 19
 What should happen when GitHub cannot be reached at startup?
@@ -255,7 +273,8 @@ C) Run with personal rules only until the next successful sync
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: the plugin keeps working offline with cached rules, and one notice tells the student that shared fixes may be out of date.
 
 ## Question 20
 When should the Chrome plus MCP compatibility spike run, and who decides on the fallback?
@@ -266,7 +285,8 @@ B) Before Construction, as README.md says. The spike owner decides
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: X
+Before Construction starts, as README.md says, because Inception ends before the spike can run. The spike owner reports the result and the team decides on the fallback together. Application Design treats the field-by-field fill sheet as an alternate path so either outcome fits the design.
 
 ---
 
@@ -281,7 +301,8 @@ B) No - skip all SECURITY rules (suitable for PoCs, prototypes, and experimental
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: A
+Rationale: the product handles résumés, contact details and sensitive answers, so security rules should be blocking. Rules that do not apply to a local plugin are marked N/A.
 
 ## Question 22: Resiliency Extensions
 Should the resiliency baseline be applied to this project?
@@ -296,7 +317,8 @@ B) No - skip the resiliency baseline (suitable for PoCs, prototypes, and experim
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: this is a local, single-user plugin with no hosted service of its own, so availability and disaster-recovery practices do not fit. Offline use with cached rules is already covered by Question 19.
 
 ## Question 23: Property-Based Testing Extension
 Should property-based testing (PBT) rules be enforced for this project?
@@ -309,4 +331,5 @@ C) No - skip all PBT rules (suitable for simple CRUD applications, UI-only proje
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: 
+[Answer]: B
+Rationale: the planner, personal-data scan, rule schema and record serialization are pure functions where properties are cheap and valuable. Browser-driven flows are covered by Playwright replay tests instead.

@@ -4,12 +4,11 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Requirements Analysis (awaiting answers to clarifying questions)
+- **Current Stage**: INCEPTION - Requirements Analysis (requirements.md generated, awaiting approval)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
-- **Workflow Scope**: INCEPTION only. The workflow stops when Inception is complete; Construction and Operations are not run in this pass.
-- **Approver**: Mikey He (ch2373) answers all questions and approves every stage for this Inception run
-- **Branch**: Inception artifacts are committed directly to `main`
+- **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
+- **Driver**: Mikey He (ch2373) runs Claude Code, records the team's answers and approvals, and commits to `main`
 
 ## Workspace State
 - **Existing Code**: No
@@ -32,15 +31,15 @@
 ## Extension Configuration
 | Extension | Enabled | Decided At |
 |---|---|---|
-| Security Baseline | Pending | Requirements Analysis |
-| Resiliency Baseline | Pending | Requirements Analysis |
-| Property-Based Testing | Pending | Requirements Analysis |
+| Security Baseline | Yes | Requirements Analysis |
+| Resiliency Baseline | No | Requirements Analysis |
+| Property-Based Testing | Yes (Partial: PBT-02, 03, 07, 08, 09 blocking) | Requirements Analysis |
 
 ## Stage Progress
 ### INCEPTION PHASE
 - [x] Workspace Detection
 - [ ] Reverse Engineering - SKIPPED (greenfield)
-- [ ] Requirements Analysis - IN PROGRESS (clarifying questions issued)
+- [ ] Requirements Analysis - IN PROGRESS (requirements.md generated, awaiting approval)
 - [ ] User Stories
 - [ ] Workflow Planning
 - [ ] Application Design
