@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Requirements Analysis (requirements.md generated, awaiting approval)
+- **Current Stage**: INCEPTION - User Stories (stories.md and personas.md generated, awaiting approval)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -39,8 +39,8 @@
 ### INCEPTION PHASE
 - [x] Workspace Detection
 - [ ] Reverse Engineering - SKIPPED (greenfield)
-- [ ] Requirements Analysis - IN PROGRESS (requirements.md generated, awaiting approval)
-- [ ] User Stories
+- [x] Requirements Analysis - COMPLETED (approved)
+- [ ] User Stories - IN PROGRESS (plan approved; stories and personas generated, awaiting approval)
 - [ ] Workflow Planning
 - [ ] Application Design
 - [ ] Units Generation
