@@ -1,83 +1,85 @@
 # Services and Orchestration
 
-Orchestration is split as decided in Q2: **skills orchestrate the conversation and browser actions**, and the **server enforces order and safety** through the Run Manager state machine and structured error codes. Every service below names the skill that drives it and the server components it uses.
+**Version 2** (after the change request): adds S9 Tracking, S10 Status Update and S11 Ranking; removes S5 Rule Review and Publication and S6 Rule Sync (shared fix library out of scope); S2, S4, S7 and S8 updated.
 
-## S1 - Profile Setup Service
-**Driver**: C1 Set-Up-Profile Skill. **Server**: C7, C6, C14. **Stories**: US-1.1 to US-1.4
+Orchestration follows Q2: **skills orchestrate the conversation and browser actions**, and the **server enforces order and safety** through the Run Manager state machine, the Tracker Service status rules, the Fit Scorer constraints, and structured error codes.
 
-1. Skill asks for the résumé (drag and drop, or typed path as fallback).
-2. `register_document(path, "resume")` - C7 checks type and size, stores path, size, SHA-256.
-3. Claude reads the PDF and extracts contact, degrees and jobs as separate records.
-4. `save_profile_records` - C6 validates, deduplicates, stores as unconfirmed.
-5. Skill shows each section; student edits and confirms; `confirm_profile_section` per section.
-6. Optional: `register_document(path, "cover_letter")`; `set_sensitive_answer` per category the student chooses.
+## S1 - Profile and Preferences Setup
+**Driver**: C1. **Server**: C7, C6, C21, C9, C14. **Stories**: US-1.1 to US-1.5, US-3.1
+
+1. Skill asks for the résumé (drag and drop, or typed path as fallback); `register_document(path, "resume")`.
+2. Claude extracts contact, degrees and jobs; `save_profile_records` stores them unconfirmed.
+3. Student edits and confirms each section; `confirm_profile_section`.
+4. Skill asks the preference questionnaire; `save_questionnaire` (C21 validates weights and the No response cutoff).
+5. Optional: cover letter (`register_document`), fixed sensitive answers (`set_sensitive_answer`).
 
 ## S2 - Fill Service (per page)
-**Driver**: C2 Fill-Application Skill. **Server**: C5, C10, C9, C11, C12, C7, C8. **Stories**: US-2.1 to US-2.5, US-3.2, US-4.1 to US-4.3, US-7.1
+**Driver**: C2. **Server**: C5, C10, C9, C11, C12, C7, C8, C22. **Stories**: US-2.1 to US-2.5, US-3.2, US-4.1 to US-4.3, US-7.1, US-11.1
 
-```text
- planned  --(batch fill done, originals sent)-->  filled
- filled   --(record_fill_result)-->               verified
- verified --(close_run: next_page/done)-->        closed
- any      --(close_run: abandoned)-->             closed
-```
+| From | Event | To |
+| --- | --- | --- |
+| planned | batch fill done, originals sent | filled |
+| filled | `record_fill_result` | verified |
+| verified | `close_run` (next_page or done) | closed |
+| any state | `close_run` (abandoned) | closed |
 
-1. Claude reads the page once and lists fields (label, type, options, element reference, control structure).
-2. `plan_fill` - C5 starts a page run (`planned`); C10 returns one action per field:
-   - `fill` from confirmed profile; `rule` with resolved steps (control fingerprint match); `sensitive` via C9 (exact match or blank); `upload`; `answer`; `ask_claude`; `skip`.
-3. Claude handles `ask_claude` fields only when the label clearly maps to one confirmed fact; otherwise leaves them blank.
-4. For `upload`: `get_document` (C7 verifies hash) then upload through Claude in Chrome.
-5. For `answer`: `find_answers`; if none fits, Claude drafts; `check_answer` counts words; the student approves or edits; optionally `save_answer`.
-6. Claude reads current values (originals), fills everything in one batch, then reads every value back.
-7. `record_fill_result` - C5 moves to `verified`, keeps originals in memory for undo; C11 notes clean read-backs or disables failing rules; returns the review list.
-8. Skill shows the review list. On "undo": `undo_page` returns restore actions, Claude applies them.
-9. Multipage: after the student approves, Claude clicks "Next" (never a submit control), calls `close_run(next_page)`, and repeats from step 1 with the same `runId`.
-10. At the end: `close_run(done)`; the student submits personally.
+1. Claude reads the page once and lists fields.
+2. `plan_fill` starts a page run and returns one action per field (`fill`, `rule`, `sensitive`, `upload`, `answer`, `ask_claude`, `skip`).
+3. Claude handles `ask_claude` fields only when the label clearly maps to one confirmed fact.
+4. Uploads use `get_document` (hash check). Open questions use `find_answers`, a draft if needed, `check_answer`, and the student's approval.
+5. Claude reads originals, fills in one batch, reads every value back; `record_fill_result` verifies, counts rule outcomes, disables failing rules, returns the review list.
+6. Undo on request through `undo_page`.
+7. Multipage: after approval, Claude clicks "Next" (never a submit control), `close_run(next_page)`, repeat.
+8. At the end: `close_run(done)` and `log_application` (status In progress, or the existing Ranked entry moves to In progress). The student submits personally.
 
-**Guards**: `record_fill_result` before a plan returns `RUN_STATE_INVALID`; login pages and CAPTCHAs pause the skill; page text is data, not instructions.
+## S3 - Fill-Sheet Fallback
+**Driver**: C2 in fill-sheet mode. **Stories**: US-9.4
+The student pastes or describes the fields; `plan_fill` runs as in S2; Claude prints a table (field, value, source, flag) marked "not verified". Tracking (S9, S10) and ranking (S11) are unaffected.
 
-## S3 - Fill-Sheet Fallback Service
-**Driver**: C2 in fill-sheet mode. **Server**: same as S2 without browser steps. **Stories**: US-9.4
+## S4 - Teach a Fix
+**Driver**: C3. **Server**: C11, C12. **Stories**: US-5.1, US-5.2, US-9.2
+1. A control fails in S2; the student demonstrates the steps.
+2. Claude describes them with the five step types and profile values; `propose_rule` validates, fingerprints, sanitizes and scans, then stores a personal rule.
+3. Later runs use the rule through S2; a read-back mismatch disables it and flags the field.
 
-1. Skill detects that Claude in Chrome tools are unavailable.
-2. Student pastes or describes the form fields; Claude structures them as `Field[]`.
-3. `plan_fill` as in S2; sensitive and answer rules apply unchanged.
-4. Skill prints a table (field, value, source, flag) for the student to copy. No read-back; every row is marked "not verified".
+## S5 - Rule Review and Publication - REMOVED in version 2
+## S6 - Rule Sync - REMOVED in version 2
 
-## S4 - Teach and Share Service
-**Driver**: C3 Teach-a-Fix Skill. **Server**: C11, C12. **Stories**: US-5.1, US-5.2, US-6.1, US-9.2
-
-1. A control fails in S2; the student demonstrates the working steps.
-2. Claude describes the steps with the five step types and profile values.
-3. `propose_rule` - C12 validates the schema, computes the control fingerprint, sanitizes values into references; C11 stores a personal rule.
-4. Later runs use the rule through S2; each clean read-back is counted.
-5. `list_share_candidates` shows rules with at least one clean later read-back.
-6. On consent, `export_rule_candidate` - C12 personal-data scan; the JSON is shown and written for a pull request.
-7. On a failed shared rule, `draft_rule_issue` returns a title and body with label, fingerprint and failing step only.
-
-## S5 - Rule Review and Publication Service
-**Driver**: P4 reviewer on GitHub. **Components**: C16, C17, C12. **Stories**: US-6.2, US-6.4, US-10.3
-
-1. A pull request adds or removes a rule file and updates `index.json` (with SHA-256).
-2. CI (C17): `npm ci`, unit and property tests with coverage, `npm audit`, schema and personal-data checks, Playwright replay for applicants A, B, C on the three forms.
-3. Branch protection requires all checks green and one approval from a non-author within 48 hours.
-4. Withdrawal is a pull request that removes the rule from the index.
-
-## S6 - Rule Sync Service
-**Driver**: server startup. **Server**: C13, C12, C14. **Stories**: US-6.3, US-9.3
-
-1. On session start the server calls `sync_rules` internally (and the tool can be called on demand).
-2. Fetch `index.json` over HTTPS; download new or changed files; verify SHA-256 and schema; replace the cache; drop removed rules.
-3. Offline: keep the cache and return `offline: true`; the skill tells the student once.
-
-## S7 - Data Deletion Service
+## S7 - Data Deletion
 **Driver**: C1. **Server**: C14. **Stories**: US-8.1
+The skill states what will be deleted and asks for confirmation; `delete_my_data({ confirm: true })` deletes profile, answers, sensitive answers, questionnaire, rules, run history, jobs, rankings, applications, status history and pending updates in one transaction. Files on disk are not touched.
 
-1. Student asks to delete data; the skill states what will be deleted and asks for confirmation.
-2. `delete_my_data({ confirm: true })` deletes records, documents, answers, sensitive answers, personal rules, rule cache and run history in one transaction. Files on disk are not touched.
+## S8 - Demo Scoring
+**Driver**: team before the demo. **Components**: C18, C15 logs, tracker and ranking results. **Stories**: US-10.4
+Run the three applicants through the three forms (SC1, SC2, SC4, SC5), scan rules, history and logs (SC3), replay the 20 labeled messages (SC6) and score the 10 postings against two questionnaires (SC7); produce one report.
 
-## S8 - Demo Scoring Service
-**Driver**: team before the demo. **Components**: C18, C15 logs. **Stories**: US-10.4
+## S9 - Tracking Service (new)
+**Driver**: C19 (and C2 for automatic logging). **Server**: C22, C21, C14. **Stories**: US-11.1, US-11.2, US-11.5, US-11.6
 
-1. Run applicants A, B, C through the three fixture forms; collect run logs and read-backs.
-2. Score against the answer key (SC1); compare A and B corrections on taught controls (SC2); scan shared rules for synthetic values (SC3); run the changed-control fixture (SC4); record the SC5 draft check.
+1. Automatic: S2 step 8 calls `log_application`. Manual: the student says "add my Globex application"; C19 calls `log_application`. Duplicate links reuse the entry.
+2. Submission: the student says they submitted; `confirm_submission` is the only path to Submitted.
+3. View: `list_applications` with an optional filter; C22 computes No response from the questionnaire cutoff at read time; Claude renders the table and timelines.
+4. Export: `export_tracker_csv` to a path the student chooses (never inside the repository).
+
+## S10 - Status Update Service (new)
+**Driver**: C19. **Server**: C22. **Stories**: US-11.3, US-11.4, US-11.7
+
+Decision order inside `update_status` (C22):
+
+1. Duplicate message ID: return `DUPLICATE_IGNORED`, no change.
+2. Transition not allowed (Submitted without the student, or an automatic backwards move): return `STATUS_TRANSITION_INVALID`.
+3. High confidence, exactly one matching application, and no conflict with an earlier student edit: apply, write status history and an undo entry.
+4. Otherwise: store a pending proposal for the student.
+
+1. The student states a reply or pastes an employer message (stretch goal: asks Claude to check Gmail through the read-only connector).
+2. Claude classifies it and calls `update_status`; message text is data and cannot widen the action beyond one proposal.
+3. `list_pending_updates` and `resolve_pending_update` let the student approve or reject; `undo_last_change` reverts the latest change.
+
+## S11 - Ranking Service (new)
+**Driver**: C20. **Server**: C23, C21, C22. **Stories**: US-12.1 to US-12.4
+
+1. `get_questionnaire`; if missing, the skill asks the student to complete it (S1 step 4).
+2. `save_job` from the open page or pasted text (no duplicates by link; no job-board searching).
+3. Claude extracts facts exactly as stated (or null) and judges skills, interest and nice-to-have fit with quotes.
+4. `score_job`: C23 rejects missing evidence, checks hard constraints, lists unknowns, caps deal-breakers at 35, applies weights, saves the ranking, and asks C22 to create or keep the tracker entry at Ranked (never moving it backwards).
+5. Claude explains the score; `compare_jobs` shows saved jobs side by side, highest first.

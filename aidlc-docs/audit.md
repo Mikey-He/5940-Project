@@ -269,3 +269,20 @@ git clone https://github.com/Mikey-He/5940-Project.git 从这个5940的文件夹
 **Context**: INCEPTION - Workflow Planning (revision), awaiting approval.
 
 ---
+
+## Workflow Planning (Revision) - Approval
+**Timestamp**: 2026-11-25T00:21:18Z
+**AI Prompt**: "Ready to proceed with this plan?"
+**User Response**: "Approve & Continue"
+**Status**: Approved
+**Context**: Execution plan version 2 approved. Proceeding to revise Application Design. The approved design answers (application-design-plan.md Q1-Q11) still apply; the new tracking and ranking components follow the same decisions (thin tool handlers and one repository, server-enforced rules, structured error codes, JSON-lines logs, in-memory SQLite tests). Detailed status and scoring rules are already fixed by requirements FR-10 to FR-13, so no new design questions were needed.
+
+---
+
+## Application Design (Revision) - Artifacts Version 2 and Approval Prompt
+**Timestamp**: 2026-11-25T00:24:10Z
+**User Input**: (none - AI step)
+**AI Response**: "Revised the application design to version 2. components.md: added C19 Track-Applications Skill, C20 Rank-This-Job Skill, C21 Questionnaire Service, C22 Tracker Service and C23 Fit Scorer; removed C13 Rule Sync and C16 Shared Rule Library (IDs kept stable); narrowed C3, C11 and C17 to personal rules; extended C1, C2, C14, C18. component-methods.md: tracking and ranking types, 29 MCP tools (shared-library tools removed), signatures for C21-C23 and the SC1-SC7 demo scorer. services.md: added S9 Tracking, S10 Status Update (decision order for auto-apply versus pending), S11 Ranking; removed S5 and S6; replaced free-form text diagrams with tables and lists. component-dependency.md: new matrix without cycles (C23 depends on C22, not the reverse), communication patterns (server makes no network requests), two validated Mermaid data-flow diagrams with text alternatives. application-design.md: consolidated view with a re-validated ASCII architecture diagram (equal line widths, allowed characters only). Security compliance: no blocking findings. Presented: Request Changes or Approve & Continue to Units Generation (revision)."
+**Context**: INCEPTION - Application Design (revision), awaiting approval.
+
+---
