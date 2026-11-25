@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Units Generation (artifacts generated, awaiting approval)
+- **Current Stage**: INCEPTION COMPLETE - stopped before CONSTRUCTION (mid-semester milestone boundary)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -48,7 +48,7 @@
 - [x] User Stories - COMPLETED (approved)
 - [x] Workflow Planning - COMPLETED (approved)
 - [x] Application Design - COMPLETED (approved)
-- [ ] Units Generation - IN PROGRESS (unit-of-work, dependency and story-map generated, awaiting approval)
+- [x] Units Generation - COMPLETED (approved)
 
 ### CONSTRUCTION PHASE (final project)
 - Units: U1 Foundation and Contracts, U2 Profile and Answer Store, U3 Fill Planner and Skills, U4 Rule Learning and Validation, U5 Fixtures, Tests and Demo (build order: U1; U2, U4, U5 in parallel; U3; Build and Test)
@@ -63,7 +63,7 @@
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
-- **Lifecycle Phase**: INCEPTION
-- **Current Stage**: Units Generation
-- **Next Stage**: Stop (milestone boundary); CONSTRUCTION starts in the final project
-- **Status**: Awaiting approval of the units of work
+- **Lifecycle Phase**: INCEPTION (complete)
+- **Current Stage**: Inception complete
+- **Next Stage**: CONSTRUCTION - U1 Foundation and Contracts (final project; assign unit owners and reviewers first)
+- **Status**: Stopped before Construction as required by the mid-semester milestone
