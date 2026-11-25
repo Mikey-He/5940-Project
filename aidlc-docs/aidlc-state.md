@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Application Design (revision for tracking and ranking)
+- **Current Stage**: INCEPTION - Units Generation (revision for tracking and ranking)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -47,11 +47,11 @@
 - [x] Requirements Analysis - COMPLETED (version 2 approved after change request)
 - [x] User Stories - COMPLETED (version 2 approved after change request)
 - [x] Workflow Planning - COMPLETED (version 2 approved after change request)
-- [ ] Application Design - IN REVISION (version 2 generated, awaiting approval)
-- [ ] Units Generation - NEEDS REVISION (after change request)
+- [x] Application Design - COMPLETED (version 2 approved after change request)
+- [ ] Units Generation - IN REVISION (version 2 generated, awaiting approval)
 
 ### CONSTRUCTION PHASE (final project)
-- Units: U1 Foundation and Contracts, U2 Profile and Answer Store, U3 Fill Planner and Skills, U4 Rule Learning and Validation, U5 Fixtures, Tests and Demo (build order: U1; U2, U4, U5 in parallel; U3; Build and Test)
+- Units (version 2): U1 Foundation and Contracts (whole team), U2 Profile, Preferences and Answers, U3 Fill Planner and Skills, U4 Rule Learning, U5 Tracking and Ranking, U6 Fixtures, Tests and Demo (build order: U1; U2, U4, U5, U6 in parallel; U3; Build and Test)
 - [ ] Functional Design - EXECUTE (per unit)
 - [ ] NFR Requirements - EXECUTE (per unit)
 - [ ] NFR Design - EXECUTE (per unit)
@@ -66,4 +66,4 @@
 - **Lifecycle Phase**: INCEPTION (change in progress)
 - **Current Stage**: Requirements Analysis (reopened)
 - **Next Stage**: Revise User Stories, Workflow Planning, Application Design and Units Generation for tracking and ranking
-- **Status**: Awaiting approval of application design version 2
+- **Status**: Awaiting approval of units version 2

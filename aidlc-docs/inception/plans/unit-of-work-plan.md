@@ -95,6 +95,24 @@ X) Other (please describe after [Answer]: tag below)
 [Answer]: B
 Rationale: ties each unit to its stories, the coverage target, the Security Baseline and the review rule, so done means demo-ready.
 
+## Follow-up after the change request (version 2)
+
+The change request added tracking and ranking and removed the shared fix library. README.md now lists five work streams (profile, preferences and answer store; fill planner and skills; rule learning; application tracking and job ranking; fixtures and tests), so the answers to Question 1 and Question 5 need a decision.
+
+## Question 8
+How should units map to the five work streams now?
+
+A) Six units: U1 Foundation and Contracts, built jointly by the team in the first Construction week around the Chrome plus MCP spike, then one unit per work stream (U2-U6), each with one owner and a reviewer who owns a different unit
+
+B) Five units: merge rule learning into the fill unit (rule learning is smaller without the shared library), keeping one unit per teammate after the foundation
+
+C) Five units: drop the separate foundation unit and let the fill unit own the contracts
+
+X) Other (please describe after [Answer]: tag below)
+
+[Answer]: A
+Rationale: one unit per work stream keeps the README and the units consistent, gives each of the five teammates exactly one unit to own (which still satisfies Question 5), and building the small foundation together in week one lets everyone learn the shared contracts and see the spike result.
+
 ## Execution Checklist
 
 - [x] 1. Validate all answers and resolve any ambiguity
