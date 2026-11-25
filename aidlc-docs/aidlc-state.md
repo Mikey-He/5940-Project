@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Requirements Analysis REOPENED (change request: add application tracking and job ranking)
+- **Current Stage**: INCEPTION - User Stories (revision for tracking and ranking)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -44,8 +44,8 @@
 ### INCEPTION PHASE
 - [x] Workspace Detection - COMPLETED
 - [x] Reverse Engineering - SKIPPED (greenfield)
-- [ ] Requirements Analysis - REOPENED (requirements version 2 generated, awaiting approval)
-- [ ] User Stories - NEEDS REVISION (after change request)
+- [x] Requirements Analysis - COMPLETED (version 2 approved after change request)
+- [ ] User Stories - IN REVISION (version 2 generated, awaiting approval)
 - [ ] Workflow Planning - NEEDS REVISION (after change request)
 - [ ] Application Design - NEEDS REVISION (after change request)
 - [ ] Units Generation - NEEDS REVISION (after change request)
@@ -66,4 +66,4 @@
 - **Lifecycle Phase**: INCEPTION (change in progress)
 - **Current Stage**: Requirements Analysis (reopened)
 - **Next Stage**: Revise User Stories, Workflow Planning, Application Design and Units Generation for tracking and ranking
-- **Status**: Awaiting approval of requirements version 2
+- **Status**: Awaiting approval of user stories version 2

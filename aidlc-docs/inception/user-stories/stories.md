@@ -1,8 +1,11 @@
 # User Stories - Job Application Assistant
 
-**Organization**: Epic-based hybrid. One epic per vision feature (E1-E7), plus Data Control (E8), Recovering from Failures (E9) and Demo Enablement (E10). Stories inside each epic follow the student's journey.
-**Format**: "As a ..., I want ..., so that ...", Given/When/Then acceptance criteria including negative criteria, and a traceability line (requirements in `requirements.md`, success criteria SC1-SC5 in `vision.md`).
-**Personas**: P1 Maya (applicant), P2 Daniel (open-question writer), P3 Priya (international student), P4 Sam (rule reviewer). See `personas.md`.
+**Version**: 2 (after the change request that added tracking and ranking and removed the shared fix library; see the change note below).
+**Organization**: Epic-based hybrid. Epics follow the vision features (E1-E5, E7), plus Data Control (E8), Recovering from Failures (E9), Demo Enablement (E10), Application Tracking (E11) and Job Ranking (E12). Stories inside each epic follow the student's journey.
+**Format**: "As a ..., I want ..., so that ...", Given/When/Then acceptance criteria including negative criteria, and a traceability line (requirements in `requirements.md` version 2, success criteria SC1-SC7 in `vision.md`).
+**Personas**: P1 Maya (applicant and job ranker), P2 Daniel (open-question writer and tracker user), P3 Priya (international student), P4 Sam (teammate preparing the demo). See `personas.md`.
+
+**Change note (version 2)**: E6 Shared Fix Library (US-6.1 to US-6.4) and US-9.3 (GitHub unreachable) were removed with requirement FR-6. US-1.5, US-10.5, E11 (US-11.1 to US-11.7) and E12 (US-12.1 to US-12.4) were added. US-5.2, US-8.1, US-9.2, US-10.3 and US-10.4 were updated.
 **Size rule**: each story is one user-visible capability that one owner can deliver in one pull request with one reviewer.
 
 ---
@@ -52,6 +55,18 @@ As a student, I want to register my cover letter the same way as my résumé, so
 - Given he registers a second cover letter, When registration completes, Then it replaces the first one, because one install holds one cover letter.
 
 **Traceability**: FR-1.2, FR-1.3, FR-1.8
+
+### US-1.5 Answer the preference questionnaire
+**Persona**: P1 Maya
+As a student, I want to tell the plugin once what roles, places, work arrangements and pay I am looking for, so that every posting is scored against my own priorities.
+
+**Acceptance criteria**
+- Given Maya finishes profile setup, When the skill asks the questionnaire, Then she can answer target roles, industries, locations, arrangements (remote, hybrid, on-site), minimum pay, company size, start date, must-haves and nice-to-haves.
+- Given she leaves the weights alone, Then skills 50%, interest 30% and nice-to-haves 20% are stored, with a No response cutoff of 21 days.
+- Given she sets weights that do not add up to 100%, Then the questionnaire is refused with a plain message.
+- Given she edits her minimum pay later, Then the next score uses the new value.
+
+**Traceability**: FR-10.1, FR-10.2, FR-10.3
 
 ---
 
@@ -198,56 +213,7 @@ As a student, I want my saved fix used automatically on the same kind of control
 - Given a personal rule for the school combobox, When Maya fills another fixture form with a control of the same fingerprint, Then `plan_fill` returns a `rule` action and the value reads back correctly.
 - Given a control with a different fingerprint, Then the rule is not applied.
 
-**Traceability**: FR-5.4, FR-2.2, SC2
-
----
-
-## E6 - Shared Fix Library (vision F6)
-
-### US-6.1 Share a proven fix
-**Persona**: P1 Maya (contributor)
-As a student, I want to contribute a fix that has worked for me, so that other students do not have to fix the same control.
-
-**Acceptance criteria**
-- Given a personal rule that has not yet passed a later read-back, Then no share option is offered.
-- Given the rule passed one clean read-back on a later run, When Maya chooses to share, Then `export_rule_candidate` runs the personal-data scan and shows her the exact JSON before writing the file.
-- Given the scan finds an email address, phone number or any literal other than a profile reference or page option label, Then export is refused and the finding is shown.
-- Given she agrees, Then the file is written for a pull request (or handed to a teammate if she has no GitHub account).
-
-**Traceability**: FR-6.1, FR-6.2, FR-5.3, SC3
-
-### US-6.2 Review a contributed rule with evidence
-**Persona**: P4 Sam
-As a teammate reviewing rules, I want every rule pull request to show schema, privacy and replay results, so that I approve only rules that work and contain no personal data.
-
-**Acceptance criteria**
-- Given a pull request that adds a rule under `rules/approved/`, When CI runs, Then it reports the schema check, the personal-data scan, and a Playwright replay for all three synthetic applicants on all three fixture forms.
-- Given any replayed value fails to read back, Then the pull request cannot merge.
-- Given Sam authored the rule, Then Sam cannot be its approving reviewer.
-- Given the checks pass, Then Sam reviews within 48 hours and the merge adds the rule and its SHA-256 checksum to `index.json`.
-
-**Traceability**: FR-6.3, FR-6.4, NFR-5.4, SC3
-
-### US-6.3 Receive approved fixes automatically
-**Persona**: P4 Sam (benefits every applicant)
-As a student using the plugin, I want approved fixes downloaded when my session starts, so that I benefit from other students' fixes without doing anything.
-
-**Acceptance criteria**
-- Given a new rule in `index.json`, When a session starts, Then `sync_rules` downloads it over HTTPS, verifies its schema and checksum, and caches it.
-- Given a downloaded rule's checksum does not match the index, Then the rule is discarded and the cached copy is kept.
-- Given applicant B starts after applicant A's two fixes were approved, When B fills the same controls, Then B needs fewer corrections than A did.
-
-**Traceability**: FR-6.5, NFR-2.7, SC2
-
-### US-6.4 Withdraw a bad rule for everyone
-**Persona**: P4 Sam
-As a teammate reviewing rules, I want to withdraw a rule through a pull request, so that every install stops using it at its next start.
-
-**Acceptance criteria**
-- Given Sam removes a rule from `index.json` in a merged pull request, When any install starts, Then the rule is dropped from its cache.
-- Then no rule is withdrawn or changed without a reviewed pull request.
-
-**Traceability**: FR-6.7, FR-6.4
+**Traceability**: FR-5.4, FR-2.2, SC2 (applicant A needs fewer corrections on a later run)
 
 ---
 
@@ -283,7 +249,7 @@ As a student, I want to undo everything the plugin changed on the current page, 
 As a student, I want one command that deletes everything the plugin stores about me, so that I control my personal data.
 
 **Acceptance criteria**
-- Given Daniel asks to delete his data, When he confirms, Then the profile, saved answers, sensitive answers, personal rules and run history are deleted.
+- Given Daniel asks to delete his data, When he confirms, Then the profile, saved answers, sensitive answers, questionnaire, personal rules, run history, saved jobs, rankings and the tracker are deleted.
 - Given he does not confirm, Then nothing is deleted.
 - Then his registered files on disk are not deleted; only the plugin's records of them are.
 
@@ -309,21 +275,11 @@ As a student, I want to be told when my registered résumé has moved or changed
 As a student, I want a fix that no longer works to be disabled and reported, so that a broken rule never fills a wrong value silently.
 
 **Acceptance criteria**
-- Given the fixture's school control changed so a rule no longer fits, When the value reads back wrong, Then the field is flagged and the rule is disabled on Maya's laptop.
-- Given a shared rule failed, Then the plugin offers to open a prefilled GitHub issue with the field label, fingerprint and failing step, and no personal values.
-- Then the plugin does not disable the rule for other installs on its own.
+- Given the fixture's school control changed so a rule no longer fits, When the value reads back wrong, Then the field is flagged and the rule is disabled.
+- Given the rule is disabled, When Maya fills the same control again, Then the field goes to Claude or is flagged, and she can teach a new fix.
+- Then the plugin does not keep using a rule that failed its read-back.
 
-**Traceability**: FR-6.7, NFR-3.2, SC4
-
-### US-9.3 GitHub cannot be reached
-**Persona**: P2 Daniel
-As a student, I want the plugin to keep working when I am offline, so that a network problem does not block my application.
-
-**Acceptance criteria**
-- Given GitHub is unreachable at session start, Then the plugin uses its cached approved rules and tells Daniel once that shared rules may be out of date.
-- Given there is no cache yet, Then the plugin runs with personal rules only and says so once.
-
-**Traceability**: FR-6.6, NFR-3.1
+**Traceability**: FR-5.5, NFR-3.2, SC4
 
 ### US-9.4 Chrome and the plugin cannot work together
 **Persona**: P1 Maya
@@ -332,8 +288,9 @@ As a student, I want a fallback when Claude in Chrome and the plugin cannot run 
 **Acceptance criteria**
 - Given the Chrome tools are unavailable, When Maya says "fill this application" and pastes or describes the form, Then the plugin produces a field-by-field fill sheet in chat with values from her confirmed profile and flagged fields marked.
 - Then sensitive and open-question rules still apply in the fill sheet (exact-match sensitive answers only; no unapproved drafts).
+- Given the browser path is unavailable, Then tracking and ranking still work, because they need no browser control.
 
-**Traceability**: FR-2.9
+**Traceability**: FR-2.9, NFR-3.1
 
 ---
 
@@ -359,26 +316,168 @@ As a teammate preparing the demo, I want three synthetic applicants and an answe
 
 **Traceability**: FR-9.2, FR-9.3, SC1, SC3
 
-### US-10.3 CI replay of every shared rule
+### US-10.3 CI checks for every change
 **Persona**: P4 Sam
-As a teammate reviewing rules, I want CI to replay every shared rule against the fixtures for all synthetic applicants, so that only working rules reach students.
+As a teammate preparing the demo, I want CI to build, test and replay taught rules on every pull request, so that a change cannot break filling, tracking or ranking unnoticed.
 
 **Acceptance criteria**
-- Given a pull request touching `rules/`, Then GitHub Actions runs `npm ci`, the unit tests, `npm audit`, the schema and personal-data checks, and the Playwright replay with pinned tool versions.
-- Given any check fails, Then the pull request is blocked from merging.
+- Given any pull request, Then GitHub Actions runs `npm ci`, the build, unit and property tests with coverage, `npm audit`, and a Playwright replay of the example taught rules on the fixture forms for applicants A, B and C, with pinned tool versions.
+- Given any check fails or coverage is below 70%, Then the pull request is blocked from merging.
 
-**Traceability**: FR-6.3, NFR-2.8, NFR-5.2, NFR-5.4
+**Traceability**: NFR-2.8, NFR-5.1, NFR-5.2, NFR-5.4
 
 ### US-10.4 Score the demo against the success criteria
 **Persona**: P4 Sam
-As a teammate preparing the demo, I want a scripted demo run that records results for SC1-SC5, so that we can show the success criteria are met.
+As a teammate preparing the demo, I want a scripted demo run that records results for SC1-SC7, so that we can show the success criteria are met.
 
 **Acceptance criteria**
-- Given the three applicants complete the three forms, Then the run report compares filled values with the answer key and shows at least 57 of 60 or more decisions correct and every wrong or unknown field flagged.
-- Given applicant A teaches two fixes, Then the report shows applicant B's correction count on the same controls is lower.
-- Then the report includes a scan of every shared rule for synthetic personal values, the SC4 changed-control result, and the SC5 draft word count and approval step.
+- Given the three applicants complete the three forms, Then the report shows at least 57 of 60 or more decisions correct, every wrong or unknown field flagged, and no duplicates on re-run (SC1).
+- Given applicant A teaches two fixes, Then the report shows fewer corrections for A on a later run of the same controls (SC2).
+- Then the report includes a scan of rules, history and logs for profile values (SC3), the changed-control result (SC4) and the draft word count and approval step (SC5).
+- Given the 20 labeled messages, Then the report shows status accuracy and confirms every uncertain match went to review (SC6).
+- Given the 10 postings and two questionnaires, Then the report shows every hard-constraint violation flagged, evidence on every score, and the team's agreement with each top-3 ordering (SC7).
 
-**Traceability**: SC1, SC2, SC3, SC4, SC5, NFR-1.2
+**Traceability**: SC1-SC7, NFR-1.2
+
+### US-10.5 Labeled messages and postings for tracking and ranking
+**Persona**: P4 Sam
+As a teammate preparing the demo, I want labeled synthetic employer messages and postings with expected results, so that tracking and ranking can be measured, not just shown.
+
+**Acceptance criteria**
+- Given `fixtures/messages/`, Then it holds at least 20 synthetic messages labeled confirmation, interview invite, interview scheduled, rejection, offer or unrelated, each with the application it belongs to (or none).
+- Given `fixtures/postings/`, Then it holds at least 10 synthetic postings, two synthetic questionnaires, the expected hard-constraint violations, and the team's agreed top-3 for each questionnaire.
+- Then no real company message or real person's data appears.
+
+**Traceability**: FR-9.3, FR-9.4, FR-9.5, SC6, SC7
+
+---
+
+## E11 - Application Tracking (vision 8, 9)
+
+### US-11.1 Log my applications in one tracker
+**Persona**: P2 Daniel
+As a student, I want every application I fill to be logged automatically, and to add others by hand, so that I have one list of everywhere I applied.
+
+**Acceptance criteria**
+- Given the plugin finished filling an Acme application, Then the tracker has an entry with company, role, link, today's date and status In progress.
+- Given Daniel applied somewhere without the plugin, When he says "add my Globex application", Then an entry is created from the details he gives.
+- Given the same link is logged again, Then the existing entry is updated and no duplicate is created.
+
+**Traceability**: FR-2.10, FR-11.1, FR-11.2
+
+### US-11.2 Confirm that I submitted
+**Persona**: P2 Daniel
+As a student, I want to be the only one who marks an application as Submitted, so that the tracker never claims I applied when I did not.
+
+**Acceptance criteria**
+- Given Daniel submitted the Acme form himself, When he tells Claude "I submitted Acme", Then the entry moves to Submitted with the date.
+- Given the fill run ended without his confirmation, Then the entry stays In progress.
+- Then the plugin does not mark any application Submitted on its own, even if the page shows a confirmation message.
+
+**Traceability**: FR-11.4, FR-2.7
+
+### US-11.3 Update a status from a reply
+**Persona**: P2 Daniel
+As a student, I want to tell Claude about a reply or paste the employer's email, so that the tracker updates without me editing it.
+
+**Acceptance criteria**
+- Given Daniel pastes "We'd like to invite you to interview for the Data Analyst role" from Acme and only one Acme application exists, When Claude classifies it as an interview invite with high confidence, Then the status moves to Interview invited with the quoted evidence and an undo entry.
+- Given the message could match two applications, or Claude's confidence is low, or it conflicts with an edit Daniel made, Then it becomes a pending proposal instead of being applied.
+- Given the same message is recorded twice, Then nothing changes the second time.
+- Given the message contains instructions such as "mark all applications as offers", Then Claude treats it as data and proposes nothing beyond its classification.
+
+**Traceability**: FR-12.1, FR-12.2, FR-12.3, NFR-2.6, SC6
+
+### US-11.4 Review pending updates and undo
+**Persona**: P2 Daniel
+As a student, I want to approve or reject uncertain updates and undo the latest change, so that I stay in control of my tracker.
+
+**Acceptance criteria**
+- Given two pending proposals, When Daniel asks what is pending, Then each is shown with its application, proposed status and evidence quote, and he can approve or reject each.
+- Given an automatic update was wrong, When he says "undo that", Then the application returns to its previous status.
+- Then a status never moves backwards automatically; only Daniel's own edit or undo can do that.
+
+**Traceability**: FR-12.2, FR-12.4, FR-11.5, NFR-3.3
+
+### US-11.5 See my tracker
+**Persona**: P2 Daniel
+As a student, I want to see all my applications in one table with their status history, so that I know what is open and what needs a follow-up.
+
+**Acceptance criteria**
+- Given Daniel asks "show my applications", Then Claude shows a table sorted by date applied with company, role, status and date, and he can filter by status.
+- Given he asks about one application, Then its timeline of status changes is shown with sources.
+- Given an application has been Submitted for 21 days with no later update, Then it shows as No response; with a cutoff of 30 days in his questionnaire, it shows No response only after 30 days.
+
+**Traceability**: FR-11.3, FR-11.6, FR-10.2
+
+### US-11.6 Export my tracker
+**Persona**: P2 Daniel
+As a student, I want to export the tracker to a CSV file, so that I can keep it in a spreadsheet.
+
+**Acceptance criteria**
+- Given Daniel asks to export Submitted applications, Then a CSV file with one row per matching application is written to a location he chooses and its path is shown.
+- Then the CSV is not written inside the repository or the plugin's code folder.
+
+**Traceability**: FR-11.6, NFR-2.5
+
+### US-11.7 Check Gmail for replies (stretch goal)
+**Persona**: P2 Daniel
+As a student who connected Gmail, I want Claude to look for employer replies when I ask, so that I do not have to paste each one.
+
+**Acceptance criteria**
+- Given Daniel connected Claude's Gmail connector and asks "check my email for replies", Then Claude reads recent messages read-only and proposes updates using the same rules as US-11.3.
+- Then the plugin does not send, label or delete any email, and does not check mail in the background.
+
+**Traceability**: FR-12.5, NFR-2.10
+
+---
+
+## E12 - Job Ranking (vision 10)
+
+### US-12.1 Save a posting to rank
+**Persona**: P1 Maya
+As a student, I want to save a posting from the page I have open or from text I paste, so that I can score and compare it.
+
+**Acceptance criteria**
+- Given Maya has a posting open, When she says "rank this job", Then the posting is saved with company, role and link.
+- Given she pastes posting text with no link, Then it is saved from the text.
+- Given she saves the same link again, Then the existing job is reused.
+- Then the plugin does not search or scrape job boards.
+
+**Traceability**: FR-13.1
+
+### US-12.2 Get a fit score with evidence
+**Persona**: P1 Maya
+As a student, I want a 0-100 fit score that explains what matches and what is missing, with quotes from the posting, so that I can trust the score.
+
+**Acceptance criteria**
+- Given a questionnaire and a saved posting, When Claude scores it, Then it reports skills, interest and nice-to-have judgements, each with quotes from the posting, and code returns the weighted 0-100 score.
+- Given a judgement has no quote from the posting, Then the score is refused and Claude must rescore with evidence.
+- Given no questionnaire is saved, Then ranking refuses and asks Maya to complete it.
+- Given the job is scored, Then its tracker entry exists with status Ranked.
+
+**Traceability**: FR-13.2, FR-13.4, FR-13.5, FR-13.6, FR-10.3, SC7
+
+### US-12.3 See deal-breakers and unknowns
+**Persona**: P1 Maya
+As a student, I want postings that break my hard constraints to be clearly marked, so that I do not waste time on jobs I cannot take.
+
+**Acceptance criteria**
+- Given Maya accepts only remote or hybrid work in New York, When a posting is on-site in Austin, Then the deal-breakers "arrangement: onsite" and "location: Austin, TX" are listed and the score is at most 35.
+- Given a posting does not state pay, Then pay is listed as unknown, not as a deal-breaker.
+- Then hard constraints are checked by code, not by Claude's judgement.
+
+**Traceability**: FR-13.3, SC7
+
+### US-12.4 Compare saved jobs
+**Persona**: P1 Maya
+As a student, I want to see my saved jobs side by side, highest score first, so that I can decide where to apply next.
+
+**Acceptance criteria**
+- Given three scored postings, When Maya asks to compare them, Then a table lists each job's score, deal-breakers and top reasons, highest first.
+- Given she then fills the top job's application, Then its tracker status moves from Ranked to In progress.
+
+**Traceability**: FR-13.5, FR-11.2, SC7
 
 ---
 
@@ -386,7 +485,7 @@ As a teammate preparing the demo, I want a scripted demo run that records result
 
 | Criterion | How the stories meet it |
 | --- | --- |
-| Independent | Each story has its own acceptance criteria; dependencies (for example US-6.1 needs US-5.1) are ordering, not shared scope |
+| Independent | Each story has its own acceptance criteria; dependencies (for example US-12.4 needs US-12.2) are ordering, not shared scope |
 | Negotiable | Stories state outcomes, not implementation; tool names are used only where `tech-env.md` already fixes them |
 | Valuable | Every story names a persona benefit; enabler stories in E10 make the success criteria measurable |
 | Estimable | Each story maps to one capability with known requirement IDs |
@@ -398,36 +497,42 @@ As a teammate preparing the demo, I want a scripted demo run that records result
 | Requirement group | Stories |
 | --- | --- |
 | FR-1 Profile setup | US-1.1, US-1.2, US-1.3, US-1.4, US-9.1 |
-| FR-2 Fill an application | US-2.1, US-2.2, US-2.3, US-2.4, US-2.5, US-9.4 |
+| FR-2 Fill an application | US-2.1, US-2.2, US-2.3, US-2.4, US-2.5, US-9.4, US-11.1 |
 | FR-3 Sensitive questions | US-3.1, US-3.2 |
 | FR-4 Open-question answers | US-4.1, US-4.2, US-4.3 |
-| FR-5 Teach a fix | US-5.1, US-5.2 |
-| FR-6 Shared fix library | US-6.1, US-6.2, US-6.3, US-6.4, US-9.2, US-9.3, US-10.3 |
+| FR-5 Teach a fix | US-5.1, US-5.2, US-9.2 |
+| FR-6 Shared fix library | Removed (no stories) |
 | FR-7 Review and undo | US-7.1, US-7.2, US-2.5 |
 | FR-8 Data control | US-8.1 |
-| FR-9 Fixtures and test data | US-10.1, US-10.2 |
+| FR-9 Fixtures and test data | US-10.1, US-10.2, US-10.5 |
+| FR-10 Preference questionnaire | US-1.5, US-11.5, US-12.2 |
+| FR-11 Application tracker | US-11.1, US-11.2, US-11.4, US-11.5, US-11.6, US-12.4 |
+| FR-12 Status updates | US-11.3, US-11.4, US-11.7 |
+| FR-13 Job fit ranking | US-12.1, US-12.2, US-12.3, US-12.4 |
 | NFR-1 Performance | US-2.1, US-10.4 |
-| NFR-2 Security and privacy | US-1.1, US-3.1, US-4.2, US-6.3, US-7.1, US-8.1, US-9.1, US-10.3 |
-| NFR-3 Reliability | US-9.2, US-9.3 |
-| NFR-5 Testability | US-6.2, US-10.3 |
+| NFR-2 Security and privacy | US-1.1, US-3.1, US-4.2, US-7.1, US-8.1, US-9.1, US-10.3, US-11.3, US-11.6, US-11.7 |
+| NFR-3 Reliability | US-9.2, US-9.4, US-11.4 |
+| NFR-5 Testability | US-10.3 |
 
 | Success criterion | Stories |
 | --- | --- |
-| SC1 Field accuracy and flagging | US-1.2, US-2.1, US-2.2, US-2.4, US-7.1, US-10.1, US-10.2, US-10.4 |
-| SC2 Fewer corrections after teaching | US-5.1, US-5.2, US-6.3, US-10.4 |
-| SC3 No personal values in shared rules | US-6.1, US-6.2, US-10.2, US-10.4 |
-| SC4 Changed control caught | US-9.2, US-10.1, US-10.4 |
-| SC5 Draft within limit, approved first | US-4.2, US-10.4 |
+| SC1 Filling | US-1.2, US-2.1, US-2.2, US-2.4, US-7.1, US-10.1, US-10.2, US-10.4 |
+| SC2 Learning | US-5.1, US-5.2, US-10.4 |
+| SC3 Privacy | US-5.1, US-7.1, US-10.4 |
+| SC4 Safety | US-9.2, US-10.1, US-10.4 |
+| SC5 Drafts | US-4.2, US-10.4 |
+| SC6 Tracking | US-11.3, US-11.4, US-10.5, US-10.4 |
+| SC7 Ranking | US-12.2, US-12.3, US-12.4, US-10.5, US-10.4 |
 
-**Totals**: 10 epics, 31 stories, 4 personas.
+**Totals**: 11 active epics (E6 removed), 39 stories, 4 personas.
 
 ## Extension Compliance Summary (User Stories)
 
 | Rule | Status | Note |
 | --- | --- | --- |
 | SECURITY-05 | Compliant | Input refusal covered (US-1.1 size and format limits) |
-| SECURITY-11 | Compliant | Misuse cases covered: prompt injection (US-4.2), submit and login boundaries (US-2.5), personal data in shared rules (US-6.1) |
-| SECURITY-13 | Compliant | Checksum verification of downloaded rules (US-6.3) |
+| SECURITY-11 | Compliant | Misuse cases covered: prompt injection through postings and employer messages (US-4.2, US-11.3), submit, login and Submitted-status boundaries (US-2.5, US-11.2), personal data in rules (US-5.1) |
+| SECURITY-13 | Compliant | Rules interpreted as fixed step types only; nothing is downloaded (US-5.1) |
 | SECURITY-15 | Compliant | Fail-closed behavior on changed files and failed read-backs (US-9.1, US-9.2) |
 | SECURITY-03 | Compliant | Logs without values (US-7.1) |
 | Other SECURITY rules | N/A | Infrastructure, network, authentication and monitoring rules do not apply to story artifacts for a local plugin (see requirements.md) |
