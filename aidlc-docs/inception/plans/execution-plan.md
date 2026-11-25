@@ -2,7 +2,10 @@
 
 ## Context Loaded
 - `aidlc-docs/inception/requirements/requirements.md` and `requirement-verification-questions.md` (23 answers)
-- `aidlc-docs/inception/user-stories/stories.md` (10 epics, 31 stories) and `personas.md` (4 personas)
+- `aidlc-docs/inception/user-stories/stories.md` version 2 (11 active epics, 39 stories) and `personas.md` (4 personas)
+- `aidlc-docs/inception/requirements/requirement-change-questions.md` (change request: add tracking and ranking, remove the shared fix library)
+
+**Version 2**: revised after the change request. Stage decisions are unchanged; scope, impact, risk, rationale and deliverables now cover apply, track and rank.
 - `vision.md`, `tech-env.md`
 - Project type: Greenfield (no reverse engineering artifacts)
 
@@ -10,15 +13,15 @@
 
 ### Change Impact Assessment
 - **User-facing changes**: Yes. Three conversational workflows inside Claude Code (set up profile, fill application, teach a fix), plus review lists, approvals and data deletion.
-- **Structural changes**: Yes. A new Claude Code plugin with three skills, a local MCP server (11 tools), a shared rule folder with an index, a CI workflow, and fixture forms.
-- **Data model changes**: Yes. New SQLite schema for profile records with confirmation status, documents, scoped answers, sensitive answers, personal rules, rule cache and run history; a JSON rule schema shared through GitHub.
-- **API changes**: Yes. New MCP tool contracts (`plan_fill`, `record_fill_result`, `propose_rule`, `export_rule_candidate`, `sync_rules` and others) defined with Zod.
+- **Structural changes**: Yes. A new Claude Code plugin with five skills (set up profile, fill application, teach a fix, track applications, rank a job), a local MCP server, a CI workflow, and fixture forms, messages and postings.
+- **Data model changes**: Yes. New SQLite schema for profile records with confirmation status, documents, scoped answers, sensitive answers, questionnaire, personal rules, run history, jobs, rankings, applications, status history and pending updates; a JSON rule schema for personal rules.
+- **API changes**: Yes. New MCP tool contracts (`plan_fill`, `record_fill_result`, `propose_rule`, `log_application`, `update_status`, `score_job` and others) defined with Zod.
 - **NFR impact**: Yes. Security Baseline enabled (personal data, prompt injection, supply chain, checksums); performance target of under 5 minutes per two-page form; 70% coverage; partial property-based testing.
 
 ### Risk Assessment
-- **Risk Level**: Medium-High. The riskiest dependency is running Claude in Chrome and the MCP server in one session; a fallback (fill sheet in chat, US-9.4) is already specified. Rule sanitization must be correct because shared rules are public.
-- **Rollback Complexity**: Easy. Local plugin; a bad shared rule is withdrawn by removing it from `index.json`.
-- **Testing Complexity**: Complex. Unit tests, fast-check properties, Playwright replay on three fixture forms for three synthetic applicants, and a recorded manual scenario run.
+- **Risk Level**: Medium-High. The riskiest dependency is running Claude in Chrome and the MCP server in one session; a fallback (fill sheet in chat, US-9.4) is already specified. Scope is the second risk: three features in three weeks, mitigated by removing the shared fix library and keeping Gmail as a stretch goal. Tracking and ranking need no browser control, so they still work if the browser path fails.
+- **Rollback Complexity**: Easy. Local plugin; a failing rule is disabled automatically, and every automatic status change can be undone.
+- **Testing Complexity**: Complex. Unit tests, fast-check properties, Playwright replay on three fixture forms for three synthetic applicants, 20 labeled messages, 10 postings with two questionnaires, and a recorded manual scenario run.
 
 ## Workflow Visualization
 
@@ -120,9 +123,9 @@ Phase 3: OPERATIONS .......... PLACEHOLDER (not required for the course)
 - [x] User Stories (COMPLETED)
 - [x] Workflow Planning (IN PROGRESS)
 - [ ] Application Design - EXECUTE
-  - **Rationale**: Every component is new. The skills, MCP tools, store, planner, rule engine, sanitizer and sync module need defined responsibilities, method signatures and dependencies, and the Chrome-unavailable fallback (US-9.4) must be designed as an alternate path.
+  - **Rationale**: Every component is new. The skills, MCP tools, store, planner, rule engine, sanitizer, tracker with status rules, and fit scorer need defined responsibilities, method signatures and dependencies, and the Chrome-unavailable fallback (US-9.4) must be designed as an alternate path.
 - [ ] Units Generation - EXECUTE
-  - **Rationale**: The system spans several modules and four work streams (profile and answer store, fill planner and skills, rule learning and validation, fixtures and tests). Each unit needs one owner and one reviewer in Construction.
+  - **Rationale**: The system spans several modules and five work streams (profile, preferences and answer store; fill planner and skills; rule learning; application tracking and job ranking; fixtures and tests). Each unit needs one owner and one reviewer in Construction.
 
 ### CONSTRUCTION PHASE (final project)
 - [ ] Functional Design - EXECUTE (per unit)
@@ -132,11 +135,11 @@ Phase 3: OPERATIONS .......... PLACEHOLDER (not required for the course)
 - [ ] NFR Design - EXECUTE (per unit)
   - **Rationale**: Security patterns (Zod validation, parameterized SQL, fail-closed handling, checksum verification, prompt-injection boundaries) must be placed into each unit's design.
 - [ ] Infrastructure Design - SKIP
-  - **Rationale**: The product runs locally with no cloud resources. The only hosted pieces are the public GitHub folder and a GitHub Actions workflow, both already specified in `tech-env.md`; the CI workflow is built in Code Generation of the rule-validation unit.
+  - **Rationale**: The product runs locally with no cloud resources. The only hosted pieces are Claude itself, the optional read-only Gmail connector (provided by Claude, nothing to deploy), and a GitHub Actions workflow already specified in `tech-env.md`; the CI workflow is built in Code Generation.
 - [ ] Code Generation - EXECUTE (ALWAYS)
   - **Rationale**: Implementation planning and code generation needed for each unit.
 - [ ] Build and Test - EXECUTE (ALWAYS)
-  - **Rationale**: Build, unit, property, replay and scenario tests verify SC1-SC5.
+  - **Rationale**: Build, unit, property, replay and scenario tests verify SC1-SC7.
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
@@ -152,11 +155,11 @@ For the mid-semester milestone the workflow stops after Units Generation is appr
 - **Demo and submission**: 2026-12-16
 
 ## Success Criteria
-- **Primary Goal**: A working Claude Code plugin that meets demo success criteria SC1-SC5 on three fixture forms with three synthetic applicants.
-- **Key Deliverables**: Plugin with three skills and a bundled MCP server; shared rule folder with index and CI replay; fixture forms, synthetic applicants and answer key; test suite; demo run report.
+- **Primary Goal**: A working Claude Code plugin that helps students apply, track and rank, meeting demo success criteria SC1-SC7 on synthetic data.
+- **Key Deliverables**: Plugin with five skills and a bundled MCP server; tracker and fit scoring; fixture forms, synthetic applicants and answer key; labeled messages and postings; CI; test suite; demo run report.
 - **Quality Gates**:
   - Every story's acceptance criteria pass
   - Unit coverage on `server/src` at least 70%; PBT-02, 03, 07, 08, 09 satisfied
   - `claude plugin validate --strict` passes
   - Security Baseline compliance summary has no blocking findings at every stage
-  - Shared rules pass schema, personal-data scan and replay before merge
+  - Taught rules pass schema, personal-data scan and replay; status rules and scoring rules have unit and property tests
