@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Workflow Planning (execution-plan.md generated, awaiting approval)
+- **Current Stage**: INCEPTION - Application Design (artifacts generated, awaiting approval)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -46,8 +46,8 @@
 - [x] Reverse Engineering - SKIPPED (greenfield)
 - [x] Requirements Analysis - COMPLETED (approved)
 - [x] User Stories - COMPLETED (approved)
-- [ ] Workflow Planning - IN PROGRESS (execution-plan.md generated, awaiting approval)
-- [ ] Application Design - EXECUTE
+- [x] Workflow Planning - COMPLETED (approved)
+- [ ] Application Design - IN PROGRESS (artifacts generated, awaiting approval)
 - [ ] Units Generation - EXECUTE
 
 ### CONSTRUCTION PHASE (final project)
@@ -63,6 +63,6 @@
 
 ## Current Status
 - **Lifecycle Phase**: INCEPTION
-- **Current Stage**: Workflow Planning
-- **Next Stage**: Application Design
-- **Status**: Awaiting approval of the execution plan
+- **Current Stage**: Application Design
+- **Next Stage**: Units Generation
+- **Status**: Awaiting approval of the application design
