@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION COMPLETE - stopped before CONSTRUCTION (mid-semester milestone boundary)
+- **Current Stage**: INCEPTION - Requirements Analysis REOPENED (change request: add application tracking and job ranking)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -44,11 +44,11 @@
 ### INCEPTION PHASE
 - [x] Workspace Detection - COMPLETED
 - [x] Reverse Engineering - SKIPPED (greenfield)
-- [x] Requirements Analysis - COMPLETED (approved)
-- [x] User Stories - COMPLETED (approved)
-- [x] Workflow Planning - COMPLETED (approved)
-- [x] Application Design - COMPLETED (approved)
-- [x] Units Generation - COMPLETED (approved)
+- [ ] Requirements Analysis - REOPENED (requirements version 2 generated, awaiting approval)
+- [ ] User Stories - NEEDS REVISION (after change request)
+- [ ] Workflow Planning - NEEDS REVISION (after change request)
+- [ ] Application Design - NEEDS REVISION (after change request)
+- [ ] Units Generation - NEEDS REVISION (after change request)
 
 ### CONSTRUCTION PHASE (final project)
 - Units: U1 Foundation and Contracts, U2 Profile and Answer Store, U3 Fill Planner and Skills, U4 Rule Learning and Validation, U5 Fixtures, Tests and Demo (build order: U1; U2, U4, U5 in parallel; U3; Build and Test)
@@ -63,7 +63,7 @@
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
-- **Lifecycle Phase**: INCEPTION (complete)
-- **Current Stage**: Inception complete
-- **Next Stage**: CONSTRUCTION - U1 Foundation and Contracts (final project; assign unit owners and reviewers first)
-- **Status**: Stopped before Construction as required by the mid-semester milestone
+- **Lifecycle Phase**: INCEPTION (change in progress)
+- **Current Stage**: Requirements Analysis (reopened)
+- **Next Stage**: Revise User Stories, Workflow Planning, Application Design and Units Generation for tracking and ranking
+- **Status**: Awaiting approval of requirements version 2

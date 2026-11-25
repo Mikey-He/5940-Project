@@ -205,3 +205,35 @@ git clone https://github.com/Mikey-He/5940-Project.git 从这个5940的文件夹
 **Context**: INCEPTION complete. Workflow stopped before CONSTRUCTION (mid-semester milestone boundary).
 
 ---
+
+## Change Request - Add Application Tracking and Job Ranking
+**Timestamp**: 2026-11-25T00:12:49Z
+**User Input**: "我的组员有一个问题需要你回答。Where would the information be stored? Like for the job tracking, for organization and the ranking, where would the person see that?" / "但是现在问题是，他们认为 final features 首先是 job applying， 就是填写这个 application， 第二个是 jobs tracking， 第三个是 jobs ranking through Claude plugins。咋办？" / "这是他们写的 V3 的文件，你可以看一下，但是我不建议你，直接让这个去改什么样的，就是说你要把这2个流程加到通过 AI DLC 的流程，按你的理解确认完了之后把它加进来，这是我就是按照你推荐那样去做。" [The last message included teammates' V3 drafts of tech-env.md and vision.md as pasted reference material.]
+**AI Response**: "Explained that job tracking and job ranking were listed as out of scope in vision.md, README.md and requirements.md, so the approved Inception artifacts do not store or show them. The team decided the final product has three features: apply, track and rank. Handling per common/workflow-changes.md (Restarting Previous Stage, Option A - modify existing artifacts rather than restart): reopen Requirements Analysis with a change-question file for tracking and ranking, using the teammates' V3 drafts as reference only (not copied wholesale); then update the input documents, requirements, user stories, execution plan, application design and units, with approval at each stage. Impact: User Stories, Workflow Planning, Application Design and Units Generation all need revision. Existing artifacts are kept and modified; earlier versions remain in git history."
+**Context**: INCEPTION - change request after Units Generation approval. Requirements Analysis reopened.
+
+---
+
+## Requirements Analysis (Change) - Change Questions and Recommended Answers
+**Timestamp**: 2026-11-25T00:13:29Z
+**User Input**: (none - AI step; recommended answers pre-filled for review as agreed earlier)
+**AI Response**: "Created aidlc-docs/inception/requirements/requirement-change-questions.md with 15 questions in three parts (tracking, ranking, success criteria and scope). Pre-filled recommendations: Q1-Q13 A, Q14 B (defer the shared fix library to keep three features achievable by December 16; keep personal fixes and answer drafting; Gmail as stretch goal), Q15 A (update input documents, V3 as reference only). Waiting for the team to confirm or change each answer."
+**Context**: INCEPTION - Requirements Analysis (change). Awaiting answers.
+
+---
+
+## Requirements Analysis (Change) - Answers Confirmed
+**Timestamp**: 2026-11-25T00:14:19Z
+**User Input**: "全部同意"
+**AI Response**: "All 15 change answers confirmed as recommended. Checked for contradictions: none (Q5 keeps Gmail optional, consistent with Q13 measuring tracking on labeled synthetic messages; Q12 Ranked status is consistent with Q2 status order; Q14 B removes the shared fix library, so requirements FR-6, success criteria SC2 and SC3, and the related stories, components and units must be revised). Next: update vision.md, tech-env.md and README.md per Q15 A, then regenerate requirements.md."
+**Context**: INCEPTION - Requirements Analysis (change), answers validated.
+
+---
+
+## Requirements Analysis (Change) - Input Documents and Requirements Version 2
+**Timestamp**: 2026-11-25T00:17:52Z
+**User Input**: (none - AI step, executing CQ15 A as confirmed)
+**AI Response**: "Updated the team's input documents per CQ15 A, using the V3 drafts as reference only: vision.md (three features apply, track, rank; features 7-10 for questionnaire, tracker, status updates and ranking; shared fix library moved to out of scope; success criteria SC1-SC7; open questions refreshed), tech-env.md (purpose, optional read-only Gmail connector, no GitHub rule hosting, five skills, new server modules and fixtures, new MCP tools, tracking and status rules, fit scoring, security and prohibited-library updates, a fit-score example function and tests), README.md (summary, problem and LLM rationale, planned integration, scope and feasibility, five work streams). Regenerated aidlc-docs/inception/requirements/requirements.md as version 2 with a change log: added FR-10 Preference Questionnaire, FR-11 Application Tracker, FR-12 Status Updates, FR-13 Job Fit Ranking, FR-2.10, FR-5.5, FR-5.6, FR-9.3, FR-9.4; marked FR-6 Shared Fix Library as removed; updated NFRs, out of scope, traceability to SC1-SC7, and the extension compliance summary (no blocking findings). Presented: Request Changes or Approve & Continue to User Stories (revision)."
+**Context**: INCEPTION - Requirements Analysis (change), awaiting approval of requirements version 2.
+
+---

@@ -2,7 +2,7 @@
 
 ## Purpose and deployment decision
 
-Job Application Assistant is a Claude Code plugin. Claude is the LLM and the agent. The plugin's skills describe each workflow, and Claude in Chrome reads and operates the employer's page in the student's browser. A local MCP server that we write in TypeScript stores the student's data and plans each fill. It also checks every rule. The guiding rule is simple. Claude interprets language. Code makes every decision that must come out the same way each time, and every such decision is unit tested.
+Job Application Assistant is a Claude Code plugin with three features described in `vision.md`: apply (fill application forms from a confirmed profile), track (keep one record of every application and its status) and rank (a 0-100 fit score for a job posting). Claude is the LLM and the agent. The plugin's skills describe each workflow, and Claude in Chrome reads and operates the employer's page in the student's browser. A local MCP server that we write in TypeScript stores the student's data, plans each fill, checks every rule, applies status rules and computes fit scores. The guiding rule is simple. Claude interprets language. Code makes every decision that must come out the same way each time, and every such decision is unit tested.
 
 ## Language and version, with framework and package manager
 
@@ -11,10 +11,11 @@ Job Application Assistant is a Claude Code plugin. Claude is the LLM and the age
 | Host and LLM | Claude Code with the student's own Claude plan. We develop and test with Claude Sonnet 5.5. | Reads pages and résumés. Chooses tools and talks to the student. |
 | Plugin format | Claude Code plugin with `.claude-plugin/plugin.json`, `skills/<name>/SKILL.md` and `.mcp.json` | Packages the skills and the MCP server |
 | Browser | Claude in Chrome extension, started with `claude --chrome` | Reads the page and fills fields. Also uploads the résumé file |
+| Email (optional, stretch goal) | Claude's Gmail connector, read only | Lets Claude find employer replies when the student asks |
 | MCP server language | TypeScript 5.x with `@types/node`, on Node.js 22.13 or later, ES modules | Our own code |
 | MCP framework | `@modelcontextprotocol/sdk`, stdio transport | Exposes typed tools to Claude |
 | Validation | Zod 3 | Schemas for tool inputs and stored records. Rules too |
-| Local database | Built-in `node:sqlite` module | Profile and answers. Personal rules and the run log too |
+| Local database | Built-in `node:sqlite` module | Profile, answers, questionnaire, personal rules, run log, jobs, rankings, applications and status history |
 | Bundler | esbuild, one file at `server/dist/index.js`, committed | Teammates install the plugin without running `npm install` |
 | Package manager | npm with a committed `package-lock.json`, installed with `npm ci` | Reproducible installs |
 
@@ -22,7 +23,7 @@ Job Application Assistant is a Claude Code plugin. Claude is the LLM and the age
 
 The product runs locally. There is no cloud deployment and no server of our own. Each student installs the plugin in Claude Code, and Claude Code starts our MCP server on the laptop over stdio when a session begins. Developers load the working copy with `claude --plugin-dir ./plugins/job-application-assistant --chrome`.
 
-Two hosted services are used. Claude itself runs on Anthropic's service under the student's plan. Approved shared rules are public JSON files in this repository under `rules/approved/`. The MCP server reads them over HTTPS from GitHub at startup and keeps the last good copy in its data folder, so it works offline with cached rules.
+The only hosted service is Claude itself, which runs on Anthropic's service under the student's plan. If the student connects it, Claude's read-only Gmail connector is used to look for employer replies when the student asks. The MCP server opens no network ports and makes no network requests.
 
 ## Plugin layout
 
@@ -32,17 +33,19 @@ plugins/job-application-assistant/
   .mcp.json                       starts server/dist/index.js with node
   skills/
     set-up-profile/SKILL.md       résumé to confirmed records
-    fill-application/SKILL.md     plan, batch fill, read back, review
-    teach-a-fix/SKILL.md          demonstration to candidate rule
+    fill-application/SKILL.md     plan, batch fill, read back, review, log the application
+    teach-a-fix/SKILL.md          demonstration to personal rule
+    track-applications/SKILL.md   status updates, tracker table, CSV export
+    rank-this-job/SKILL.md        extract posting facts, score 0-100, compare saved jobs
   server/
-    src/  index.ts db.ts profile.ts answers.ts plan.ts rules.ts sanitize.ts sync.ts
+    src/  index.ts db.ts profile.ts answers.ts questionnaire.ts plan.ts rules.ts sanitize.ts tracker.ts score.ts csv.ts
     test/ *.test.ts
     dist/index.js                 bundled output, committed
-rules/approved/index.json         list of approved rule files with versions
-rules/approved/*.json             shared rules, public
-.github/workflows/rules.yml       CI that tests every rule pull request
+.github/workflows/ci.yml          build, unit tests, audit, fixture replay
 fixtures/forms/                   three static fixture forms
 fixtures/applicants/              three synthetic applicants
+fixtures/messages/                at least 20 labeled synthetic employer messages
+fixtures/postings/                at least 10 synthetic postings and two questionnaires
 ```
 
 There is no `bin/` folder, because Cowork refuses to install a plugin that has one. No name starts with `claude-`.
@@ -56,8 +59,7 @@ The `.mcp.json` file looks like this.
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/server/dist/index.js"],
       "env": {
-        "JOBAPP_DB": "${CLAUDE_PLUGIN_DATA}/jobapp.db",
-        "JOBAPP_RULES_URL": "https://raw.githubusercontent.com/Mikey-He/5940-Project/main/rules/approved/index.json"
+        "JOBAPP_DB": "${CLAUDE_PLUGIN_DATA}/jobapp.db"
       }
     }
   }
@@ -73,7 +75,10 @@ The `.mcp.json` file looks like this.
 | Open-question answers with scope | Same database | Scope is either one application or one company. General answers apply everywhere |
 | Sensitive fixed answers | Same database, separate table | Filled only by exact question match. Never sent to a rule and never drafted |
 | Personal rules and fill history | Same database | History stores field labels and outcomes, not values |
-| Approved shared rules | `rules/approved/` in this repository, cached locally | Hold steps and profile references only |
+| Preference questionnaire | Same database | Roles, locations, arrangements, minimum pay, weights, No response cutoff |
+| Jobs and rankings | Same database | Posting facts, the three judgements with evidence quotes, the final score, deal-breakers and unknowns |
+| Applications and status history | Same database | Company, role, link, dates, current status, every status change with its source, pending proposals and undo entries |
+| Exported tracker CSV | A file the student chooses | Never committed |
 | Model input | Sent to Claude by Claude Code | Page text plus the profile fields that page needs |
 
 ## Giving the résumé and cover letter
@@ -88,25 +93,33 @@ The student drags the PDF into the Claude Code prompt or types its path. Both gi
 | `register_document` | File path and kind (résumé or cover letter) | Accepts only PDF or DOCX up to 10 MB. Stores the path with its size and hash |
 | `get_document` | Kind | Confirms the file still exists and is unchanged, then returns its path. Otherwise asks Claude to request the file again |
 | `save_profile_records` | Records extracted by Claude | Validates and deduplicates them, then stores them as unconfirmed until the student confirms |
-| `plan_fill` | Page URL and fingerprint. A list of fields, each with its label and type plus options and an element reference | Matches fields to profile facts and approved rules. Returns a plan plus the fields left for Claude |
+| `plan_fill` | Page URL and fingerprint. A list of fields, each with its label and type plus options and an element reference | Matches fields to profile facts and saved rules. Returns a plan plus the fields left for Claude |
 | `record_fill_result` | Run ID and read-back values | Compares them with the plan and flags mismatches. Disables a failing rule locally |
 | `find_answers` | Question text and word limit | Returns scoped saved answers that fit the limit |
 | `save_answer` | Answer text and scope | Stores an approved answer |
 | `propose_rule` | Steps from a demonstration | Validates the steps and replaces personal values with profile references. Saves the result as a personal rule |
-| `export_rule_candidate` | Rule ID | Runs the personal-data scan, then writes a JSON file for a pull request after the student agrees |
-| `sync_rules` | none | Downloads the approved rule index and verifies each rule against the schema. Caches the valid ones |
+| `save_questionnaire`, `get_questionnaire` | Preferences and weights | Validates values; weights must add up to 100% |
+| `log_application` | Company, role, link | Creates or reuses the tracker entry (no duplicates by link) with status In progress |
+| `confirm_submission` | Application ID, date | Moves the application to Submitted only after the student confirms |
+| `update_status` | Application ID, new status, evidence quote, source, confidence | Applies a clear update with an undo entry; stores an uncertain one as a pending proposal |
+| `list_pending_updates`, `resolve_pending_update` | Proposal ID, approve or reject | Lets the student confirm or reject uncertain changes |
+| `undo_last_change` | Application ID | Reverts the latest status change or tracker edit |
+| `list_applications`, `export_tracker_csv` | Optional status filter | Tracker sorted by date applied with timelines; computes No response; writes a CSV |
+| `save_job` | Company, role, link or posting text | Stores a posting for ranking; no duplicates by link |
+| `score_job` | Job ID, posting facts, three judgements with evidence | Checks hard constraints, computes the 0-100 score, saves it and sets the tracker status to Ranked |
+| `compare_jobs` | Job IDs | Saved scores side by side, highest first |
 
 ## Filling an application
 
 1. The fill skill asks Claude to read the page structure once and list every field with its label and type, plus any options.
-2. Claude calls `plan_fill`. Code fills what it can match exactly. It attaches an approved rule to any control the rule's fingerprint matches.
+2. Claude calls `plan_fill`. Code fills what it can match exactly. It attaches a saved rule to any control the rule's fingerprint matches.
 3. Claude decides only the fields code could not place, using the label and its section. For a file field, Claude calls `get_document` and uploads that file through Claude in Chrome.
 4. Claude executes the plan in one batch with the browser's form tools and then reads every value back.
-5. Claude calls `record_fill_result` and shows the review list. The student checks it and submits the application personally.
+5. Claude calls `record_fill_result` and shows the review list. The plugin logs the application in the tracker with `log_application`. The student checks the page, submits it personally, and then confirms the submission so the tracker shows Submitted.
 
 Claude in Chrome pauses at login pages and CAPTCHAs for the student. The skill never clicks a submit button.
 
-## How a rule is learned and shared
+## How a personal rule is learned
 
 A rule is a small JSON document with a target fingerprint and a list of steps. Values are profile references such as `{{profile.education[0].school}}`. A step must be one of these five types.
 
@@ -118,26 +131,37 @@ A rule is a small JSON document with a target fingerprint and a list of steps. V
 
 Validation has three layers.
 
-1. **Schema.** Zod rejects unknown step types and literal values. The personal-data scan rejects anything that looks like personal data. That includes email addresses and phone numbers, plus any value found in the synthetic profiles.
-2. **Replay.** A GitHub Actions workflow runs on every pull request that touches `rules/`. Playwright opens each fixture form, and a small test executor runs the rule for all three synthetic applicants. The pull request merges only if every value reads back correctly and a teammate approves.
-3. **Runtime.** Each filled value is read back. A mismatch disables that rule on the laptop and flags the field. A fingerprint mismatch skips the rule.
+1. **Schema.** Zod rejects unknown step types and literal values. The personal-data scan rejects anything that looks like personal data, including email addresses, phone numbers and any value in the student's profile.
+2. **Replay in tests.** Playwright replays rules on the fixture forms for all three synthetic applicants in CI.
+3. **Runtime.** Each filled value is read back. A mismatch disables that rule and flags the field. A fingerprint mismatch skips the rule.
 
-### The shared rule folder
+Rules stay on the student's laptop. Sharing fixes across students is out of scope for the MVP.
 
-Shared rules live in this same GitHub repository, so we run no extra service. The repository is public, and the plugin reads it without signing in.
+## Tracking and status rules
 
-- `rules/approved/index.json` lists every approved rule file with its version. The plugin downloads this index at startup and then fetches only the files it has not cached.
-- A student with a GitHub account opens a pull request with the exported file. A student without one sends the file to a teammate, who opens the pull request.
-- To withdraw a bad rule, a teammate removes it from the index in a pull request. Every install drops it at the next start.
+Application statuses form a fixed ordered set: Ranked, In progress, Submitted, Interview invited, Interview scheduled, then Offer or Rejected. No response is computed, never stored.
+
+- Only the student can move an application to Submitted (`confirm_submission`).
+- A Submitted application with no later update after the cutoff (default 21 days, set in the questionnaire) is shown as No response.
+- A status never moves backwards automatically.
+- Claude classifies an employer message the student pastes or (stretch goal) finds through the read-only Gmail connector. A high-confidence update that matches exactly one application and does not conflict with an earlier student edit applies automatically with an undo entry. Anything else becomes a pending proposal.
+- Recording the same message twice changes nothing, and logging the same link again updates the existing entry.
+
+## Fit scoring
+
+- Claude extracts the posting's location, work arrangement and top of the pay range, and judges skills fit, interest fit and nice-to-have fit from 0 to 100, each with quotes from the posting as evidence.
+- Code checks the hard constraints from the questionnaire: location, work arrangement and minimum pay. A violated constraint is a deal-breaker and caps the score at 35. A fact the posting does not state is listed as unknown, not treated as a violation.
+- Code combines the three judgements with the questionnaire weights (default skills 50%, interest 30%, nice-to-haves 20%).
 
 ## Security basics and prohibited choices
 
-- Page text and résumé text are data, not instructions, and so are job descriptions. Skills tell Claude to ignore instructions found in them. Text on a page can never add a tool call that the student did not ask for.
+- Page text and résumé text are data, not instructions, and so are job descriptions, postings and employer messages. Skills tell Claude to ignore instructions found in them. Text on a page can never add a tool call that the student did not ask for.
 - Every MCP tool validates its input with Zod and refuses anything that fails.
-- The plugin never submits an application or enters a password. It never creates an account or answers a sensitive question from a rule.
+- The plugin never submits an application or enters a password. It never creates an account or answers a sensitive question from a rule. It never marks an application Submitted without the student's confirmation.
 - No secrets exist in this product. No API keys are stored, because Claude Code handles the model connection under the student's login.
 - Logs record tool names and outcomes with timings, never profile values.
-- Only synthetic data is committed. `.gitignore` excludes `node_modules/` and `*.db`, and it also excludes `.env`.
+- Only synthetic data is committed. `.gitignore` excludes `node_modules/`, `*.db`, `.env` and exported tracker CSV files.
+- Gmail access, when used, is read only through Claude's connector. The plugin never sends, labels or deletes mail.
 
 | Prohibited | Reason | Use instead |
 | --- | --- | --- |
@@ -146,16 +170,17 @@ Shared rules live in this same GitHub repository, so we run no extra service. Th
 | OpenAI or Anthropic SDKs inside the plugin | Claude Code already provides the model, and an SDK would need an API key | Skills and tool calls in the host Claude session |
 | `axios` or `node-fetch` | Node 22 has `fetch` built in, so the extra dependency is unnecessary | Global `fetch` |
 | Unofficial ATS or LinkedIn scraping libraries | They break site terms, and our MVP does not need them | Fixture forms and the student's open page |
-| `eval` or `new Function` on rule content | A shared rule would become executable code | Interpret the fixed step types only |
+| `eval` or `new Function` on rule content | A rule would become executable code | Interpret the fixed step types only |
+| Gmail write access or a custom mail integration | We never send, label or delete mail | Claude's read-only Gmail connector |
 
 ## Test framework
 
 | Layer | Tool | What it covers |
 | --- | --- | --- |
-| Unit | Vitest | Field matching and the planner. Rule schema and the personal-data scan. Answer scope |
-| Rule replay | Playwright Test with the three fixture forms | Every shared rule fills every synthetic applicant correctly |
+| Unit | Vitest | Field matching and the planner. Rule schema and the personal-data scan. Answer scope. Status rules, No response, pending updates and undo. Hard constraints and fit scoring. CSV export |
+| Rule replay | Playwright Test with the three fixture forms | Every taught rule fills every synthetic applicant correctly |
 | Plugin checks | `claude plugin validate --strict` | Manifest and MCP entry, including paths |
-| Scenario check | Manual run with Claude Code and Chrome, recorded | The five success criteria in `vision.md` |
+| Scenario check | Manual run with Claude Code and Chrome, recorded | The seven success criteria in `vision.md`, including 20 labeled messages and 10 ranked postings |
 
 Run `npm ci` and `npm run build`, then `npm test` and `npx playwright test`.
 
@@ -199,7 +224,7 @@ export function planFill(fields: Field[], profile: Profile, rules: Rule[], pageF
     const rule = rules.find((r) => r.fingerprint === pageFingerprint && r.profileKey === key);
     if (rule) return { ref: field.ref, action: "rule", ruleId: rule.id, value: profile[key] };
     if (field.type === "combobox") {
-      return { ref: field.ref, action: "ask_claude", reason: "searchable control without an approved rule" };
+      return { ref: field.ref, action: "ask_claude", reason: "searchable control without a saved rule" };
     }
     return { ref: field.ref, action: "fill", value: profile[key], source: "profile" };
   });
@@ -244,6 +269,39 @@ server.registerTool(
 await server.connect(new StdioServerTransport());
 ```
 
+## Example function (fit score)
+
+```ts
+// server/src/score.ts. Hard constraints and the final score are computed in code
+export type Arrangement = "remote" | "hybrid" | "onsite";
+export type Questionnaire = {
+  locations: string[]; arrangements: Arrangement[]; minPay: number | null;
+  weights: { skills: number; interest: number; niceToHaves: number };   // sum to 1
+};
+export type PostingFacts = { location: string | null; arrangement: Arrangement | null; payMax: number | null };
+export type Judgement = { score: number; evidence: string[] };          // 0-100 with quotes from the posting
+export const DEAL_BREAKER_CAP = 35;
+
+export function scoreFit(q: Questionnaire, f: PostingFacts, skills: Judgement, interest: Judgement, nice: Judgement) {
+  const dealBreakers: string[] = [];
+  const unknowns: string[] = [];
+  if (f.arrangement === null) unknowns.push("arrangement");
+  else if (!q.arrangements.includes(f.arrangement)) dealBreakers.push("arrangement: " + f.arrangement);
+  if (f.arrangement !== "remote") {
+    if (f.location === null) unknowns.push("location");
+    else if (!q.locations.some((l) => l.toLowerCase() === f.location!.toLowerCase())) dealBreakers.push("location: " + f.location);
+  }
+  if (q.minPay !== null) {
+    if (f.payMax === null) unknowns.push("pay");
+    else if (f.payMax < q.minPay) dealBreakers.push("pay below minimum");
+  }
+  if (skills.evidence.length === 0 || interest.evidence.length === 0) throw new Error("Judgements need evidence from the posting");
+  const w = q.weights;
+  const raw = w.skills * skills.score + w.interest * interest.score + w.niceToHaves * nice.score;
+  return { score: Math.round(dealBreakers.length ? Math.min(raw, DEAL_BREAKER_CAP) : raw), dealBreakers, unknowns };
+}
+```
+
 ## Example test
 
 ```ts
@@ -260,12 +318,12 @@ describe("planFill", () => {
     expect(p).toEqual({ ref: "f1", action: "fill", value: "maya.test@example.edu", source: "profile" });
   });
 
-  it("hands a searchable control to Claude when no approved rule exists", () => {
+  it("hands a searchable control to Claude when no saved rule exists", () => {
     const [p] = planFill([school], profile, [], "fp-workday-1");
     expect(p.action).toBe("ask_claude");
   });
 
-  it("uses an approved rule only when the page fingerprint matches", () => {
+  it("uses a saved rule only when the page fingerprint matches", () => {
     const rule = { id: "r-school", fingerprint: "fp-workday-1", profileKey: "education.0.school", steps: [] };
     expect(planFill([school], profile, [rule], "fp-workday-1")[0].action).toBe("rule");
     expect(planFill([school], profile, [rule], "fp-workday-2")[0].action).toBe("ask_claude");
@@ -274,6 +332,23 @@ describe("planFill", () => {
   it("never guesses a field the profile does not cover", () => {
     const [p] = planFill([{ ref: "f9", label: "Favorite color", type: "text" }], profile, [], "fp");
     expect(p).toMatchObject({ action: "ask_claude" });
+  });
+});
+
+// server/test/score.test.ts
+import { scoreFit, type Questionnaire } from "../src/score";
+const q: Questionnaire = { locations: ["New York, NY"], arrangements: ["remote", "hybrid"], minPay: 70000,
+  weights: { skills: 0.5, interest: 0.3, niceToHaves: 0.2 } };
+const j = (score: number) => ({ score, evidence: ['"SQL and Tableau required"'] });
+
+describe("scoreFit", () => {
+  it("caps an on-site job in another state at 35", () => {
+    const r = scoreFit(q, { location: "Austin, TX", arrangement: "onsite", payMax: 90000 }, j(90), j(80), j(50));
+    expect(r.score).toBe(35);
+  });
+  it("lists missing pay as unknown, not a deal-breaker", () => {
+    const r = scoreFit(q, { location: null, arrangement: "remote", payMax: null }, j(70), j(70), j(70));
+    expect(r).toMatchObject({ score: 70, unknowns: ["pay"], dealBreakers: [] });
   });
 });
 ```
