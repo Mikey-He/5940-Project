@@ -4,7 +4,7 @@
 - **Project Name**: Job Application Assistant (INFO 5940, Fall 2026)
 - **Project Type**: Greenfield
 - **Start Date**: 2026-11-24T23:39:26Z
-- **Current Stage**: INCEPTION - Application Design (artifacts generated, awaiting approval)
+- **Current Stage**: INCEPTION - Units Generation (artifacts generated, awaiting approval)
 - **Methodology**: AI-DLC v1.0.1
 - **Rule Details Directory**: `.aidlc-rule-details/`
 - **Workflow Scope**: Mid-semester milestone - INCEPTION only. Stop after Units Generation approval; Construction starts in the final project.
@@ -47,10 +47,11 @@
 - [x] Requirements Analysis - COMPLETED (approved)
 - [x] User Stories - COMPLETED (approved)
 - [x] Workflow Planning - COMPLETED (approved)
-- [ ] Application Design - IN PROGRESS (artifacts generated, awaiting approval)
-- [ ] Units Generation - EXECUTE
+- [x] Application Design - COMPLETED (approved)
+- [ ] Units Generation - IN PROGRESS (unit-of-work, dependency and story-map generated, awaiting approval)
 
 ### CONSTRUCTION PHASE (final project)
+- Units: U1 Foundation and Contracts, U2 Profile and Answer Store, U3 Fill Planner and Skills, U4 Rule Learning and Validation, U5 Fixtures, Tests and Demo (build order: U1; U2, U4, U5 in parallel; U3; Build and Test)
 - [ ] Functional Design - EXECUTE (per unit)
 - [ ] NFR Requirements - EXECUTE (per unit)
 - [ ] NFR Design - EXECUTE (per unit)
@@ -63,6 +64,6 @@
 
 ## Current Status
 - **Lifecycle Phase**: INCEPTION
-- **Current Stage**: Application Design
-- **Next Stage**: Units Generation
-- **Status**: Awaiting approval of the application design
+- **Current Stage**: Units Generation
+- **Next Stage**: Stop (milestone boundary); CONSTRUCTION starts in the final project
+- **Status**: Awaiting approval of the units of work
